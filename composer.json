@@ -8,12 +8,19 @@
     "require": {
         "php": "^8.3",
         "laravel/framework": "^13.0",
-        "laravel/tinker": "^3.0"
+        "laravel/sanctum": "^4.0",
+        "laravel/tinker": "^3.0",
+        "maatwebsite/excel": "^1.1",
+        "sentry/sentry-laravel": "^4.24"
     },
     "require-dev": {
+        "barryvdh/laravel-ide-helper": "^3.7",
+        "brianium/paratest": "^7.20",
         "fakerphp/faker": "^1.23",
+        "larastan/larastan": "^3.9",
         "laravel/pail": "^1.2.5",
-        "laravel/pint": "^1.27",
+        "laravel/pint": "^1.29",
+        "laravel/telescope": "^5.19",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
         "phpunit/phpunit": "^12.5.12"
@@ -31,6 +38,11 @@
         }
     },
     "scripts": {
+        "ide-helper": [
+            "@php artisan ide-helper:models --reset --write --no-interaction",
+            "@php artisan ide-helper:generate"
+        ],
+        "lint": "./vendor/bin/pint",
         "setup": [
             "composer install",
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
