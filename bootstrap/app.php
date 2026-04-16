@@ -12,11 +12,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->api(prepend: [
-            \Illuminate\Http\Middleware\HandleCors::class,
-        ]);
+        // $middleware->api(prepend: [
+        //     \Illuminate\Http\Middleware\HandleCors::class,
+        // ]);
 
-        $middleware->statefulApi();
+        // $middleware->statefulApi();
+
+        $middleware->alias([
+            'route.admin' => \App\Http\Middleware\RouteAdmin::class,
+            // 'route.warehouse' => \App\Http\Middleware\RouteWarehouse::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

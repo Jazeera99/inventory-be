@@ -4,6 +4,7 @@ namespace Tests;
 
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Lang;
+use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
 
 trait TestHttp
@@ -87,7 +88,7 @@ trait TestHttp
     /**
      * Call GET/POST/PUT/DELETE request and assert the json structure.
      *
-     * @param  \Closure(\Illuminate\Testing\Fluent\AssertableJson): (\Illuminate\Testing\Fluent\AssertableJson)  $callback
+     * @param  \Closure(AssertableJson): (AssertableJson)  $callback
      */
     public function assertJsonReq(array $data, \Closure $callback): TestResponse
     {
@@ -99,7 +100,7 @@ trait TestHttp
     /**
      * Call GET request and assert the json structure.
      *
-     * @param  \Closure(\Illuminate\Testing\Fluent\AssertableJson): (\Illuminate\Testing\Fluent\AssertableJson)  $callback
+     * @param  \Closure(AssertableJson): (AssertableJson)  $callback
      */
     public function assertJsonGet(\Closure $callback): TestResponse
     {
@@ -112,7 +113,7 @@ trait TestHttp
      * Call POST request and assert the json structure.
      *
      * @param  array<string,mixed>  $data
-     * @param  \Closure(\Illuminate\Testing\Fluent\AssertableJson): (\Illuminate\Testing\Fluent\AssertableJson)  $callback
+     * @param  \Closure(AssertableJson): (AssertableJson)  $callback
      */
     public function assertJsonPost(array $data, \Closure $callback): TestResponse
     {
@@ -125,7 +126,7 @@ trait TestHttp
      * Call PUT request and assert the json structure.
      *
      * @param  array<string,mixed>  $data
-     * @param  \Closure(\Illuminate\Testing\Fluent\AssertableJson): (\Illuminate\Testing\Fluent\AssertableJson)  $callback
+     * @param  \Closure(AssertableJson): (AssertableJson)  $callback
      */
     public function assertJsonPut(array $data, \Closure $callback): TestResponse
     {
@@ -135,9 +136,32 @@ trait TestHttp
     }
 
     /**
+     * Call PATCH request and assert the json structure.
+     *
+     * @param  array<string,mixed>  $data
+     * @param  \Closure(AssertableJson): (AssertableJson)  $callback
+     */
+    public function assertJsonPatch(array $data, \Closure $callback): TestResponse
+    {
+        $this->method = 'PATCH';
+
+        return $this->assertJsonReq($data, $callback);
+    }
+
+    /**
+     * Set response PATCH for controller test toggle status or partial update.
+     */
+    public function jsonPatch(array $data = []): TestResponse
+    {
+        $this->method = 'PATCH';
+
+        return $this->jsonReq($data);
+    }
+
+    /**
      * Call DELETE request and assert the json structure.
      *
-     * @param  \Closure(\Illuminate\Testing\Fluent\AssertableJson): (\Illuminate\Testing\Fluent\AssertableJson)  $callback
+     * @param  \Closure(AssertableJson): (AssertableJson)  $callback
      */
     public function assertJsonDelete(array|\Closure $data, ?\Closure $callback = null): TestResponse
     {

@@ -192,6 +192,12 @@ return [
     |
     */
 
-    'attributes' => [],
-
+    'attributes' => [
+        'full_name' => 'full name',
+        'password' => 'password',
+        'permissions' => 'permissions',
+        'role_id' => 'role',
+        'role_name' => 'role name',
+        'username' => 'username',
+    ],
 ];

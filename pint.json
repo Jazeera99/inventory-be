@@ -1,0 +1,37 @@
+{
+    "preset": "laravel",
+    "rules": {
+        "new_with_parentheses": {
+            "named_class": true,
+            "anonymous_class": false
+        },
+        "no_unneeded_control_parentheses": {
+            "statements": [
+                "break",
+                "clone",
+                "continue",
+                "echo_print",
+                "others",
+                "return",
+                "switch_case",
+                "yield",
+                "yield_from"
+            ]
+        },
+        "no_extra_blank_lines": {
+            "tokens": [
+                "attribute",
+                "case",
+                "continue",
+                "curly_brace_block",
+                "default",
+                "extra",
+                "parenthesis_brace_block",
+                "switch",
+                "throw",
+                "use"
+            ]
+        },
+        "void_return": true
+    }
+}

@@ -23867,6 +23867,110 @@ namespace Sentry\Laravel {
             }
     }
 
+namespace Illuminate\Support {
+    /**
+     */
+    class Arr {
+        /**
+         * Wrap each item in single quotes.
+         *
+         * @param \Illuminate\Support\Collection|array $items
+         * @param array|null $excepts
+         * @return \Illuminate\Support\Collection|array
+         * @static
+         */
+        public static function without($items, $excepts)
+        {
+            return \Illuminate\Support\Arr::without($items, $excepts);
+        }
+
+        /**
+         * Wrap each item in single quotes.
+         *
+         * @param \Illuminate\Support\Collection|array $items
+         * @return \Illuminate\Support\Collection|array
+         * @static
+         */
+        public static function wrapQuote($items)
+        {
+            return \Illuminate\Support\Arr::wrapQuote($items);
+        }
+
+            }
+    /**
+     * @template TKey of array-key
+     * @template-covariant TValue
+     * @implements \ArrayAccess<TKey, TValue>
+     * @implements \Illuminate\Support\Enumerable<TKey, TValue>
+     */
+    class Collection {
+        /**
+         * @param callable|string|null $p1
+         * @return \Cknow\Money\Money
+         * @static
+         */
+        public static function sumMoney($p1 = null)
+        {
+            return \Illuminate\Support\Collection::sumMoney($p1);
+        }
+
+        /**
+         * @param callable|string|null $p1
+         * @return \Cknow\Money\Money
+         * @static
+         */
+        public static function avgMoney($p1 = null)
+        {
+            return \Illuminate\Support\Collection::avgMoney($p1);
+        }
+
+            }
+    /**
+     */
+    class Str {
+        /**
+         * Convert array to string with oxford comma style.
+         *
+         * @param \Illuminate\Support\Collection|array $items
+         * @param string $conjunction
+         * @return string
+         * @static
+         */
+        public static function joinOxford($items, $conjunction)
+        {
+            return \Illuminate\Support\Str::joinOxford($items, $conjunction);
+        }
+
+        /**
+         * Convert array to string with oxford comma style "or" conjunction.
+         *
+         * Results in strings like "A or B" and "A, B, or C".
+         *
+         * @see \App\Providers\AppServiceProvider::boot()
+         * @param \Illuminate\Support\Collection|array $items
+         * @return string
+         * @static
+         */
+        public static function joinOr($items)
+        {
+            return \Illuminate\Support\Str::joinOr($items);
+        }
+
+        /**
+         * Convert array to string with oxford comma style.
+         *
+         * @param string $phone
+         * @return string
+         * @static
+         */
+        public static function phone($phone)
+        {
+            return \Illuminate\Support\Str::phone($phone);
+        }
+
+            }
+    }
+
 namespace Illuminate\Http {
     /**
      */
@@ -23954,6 +24058,68 @@ namespace Illuminate\Console\Scheduling {
         public static function sentryMonitor($monitorSlug = null, $checkInMargin = null, $maxRuntime = null, $updateMonitorConfig = true, $failureIssueThreshold = null, $recoveryThreshold = null)
         {
             return \Illuminate\Console\Scheduling\Event::sentryMonitor($monitorSlug, $checkInMargin, $maxRuntime, $updateMonitorConfig, $failureIssueThreshold, $recoveryThreshold);
+        }
+
+            }
+    }
+
+namespace Illuminate\Testing\Fluent {
+    /**
+     */
+    class AssertableJson {
+        /**
+         * @param int $count
+         * @static
+         */
+        public static function paginated($count = 1)
+        {
+            return \Illuminate\Testing\Fluent\AssertableJson::paginated($count);
+        }
+
+        /**
+         * @see \App\Providers\AppServiceProvider::boot()
+         * @static
+         */
+        public static function cursorPaginated()
+        {
+            return \Illuminate\Testing\Fluent\AssertableJson::cursorPaginated();
+        }
+
+        /**
+         * @param string $key
+         * @param \Cknow\Money\Money|string|int|float|null $expected
+         * @return static
+         * @static
+         */
+        public static function whereMoney($key, $expected)
+        {
+            return \Illuminate\Testing\Fluent\AssertableJson::whereMoney($key, $expected);
+        }
+
+        /**
+         * @param string $key
+         * @param \Illuminate\Support\Carbon $value
+         * @return static
+         * @static
+         */
+        public static function whereTs($key, $value)
+        {
+            return \Illuminate\Testing\Fluent\AssertableJson::whereTs($key, $value);
+        }
+
+            }
+    }
+
+namespace Illuminate\Database\Schema {
+    /**
+     */
+    class Blueprint {
+        /**
+         * @static
+         */
+        public static function formNumber()
+        {
+            return \Illuminate\Database\Schema\Blueprint::formNumber();
         }
 
             }
@@ -25973,6 +26139,157 @@ namespace  {
         {
             /** @var \Illuminate\Database\Eloquent\Builder $instance */
             return $instance->mergeConstraintsFrom($from);
+        }
+
+        /**
+         * @static
+         */
+        public static function customPaginate()
+        {
+            return \Illuminate\Database\Eloquent\Builder::customPaginate();
+        }
+
+        /**
+         * @see \App\Providers\AppServiceProvider::boot()
+         * @static
+         */
+        public static function customCursorPaginate()
+        {
+            return \Illuminate\Database\Eloquent\Builder::customCursorPaginate();
+        }
+
+        /**
+         * Usage:
+         *
+         * Purchase::query()
+         *   ->formSearch(
+         *       productVariantPath: 'purchaseItems.productVariant',
+         *       callback: fn ($query, $search) => $query->orWhere('reference_number', 'like', "%{$search}%")
+         *   )
+         *
+         * @param string $productVariantPath
+         * @param \Closure|null $callback
+         * @param string|null $keyword
+         * @static
+         */
+        public static function formSearch($productVariantPath, $callback = null, $keyword = null)
+        {
+            return \Illuminate\Database\Eloquent\Builder::formSearch($productVariantPath, $callback, $keyword);
+        }
+
+        /**
+         * Usage:
+         *
+         * Project belongsToMany User
+         * Relevance calculation:
+         *  - matches whole word, then by partial word
+         *  - matches column priorities: projects.name, users.name, projects.description
+         *  - not typo tolerant yet
+         *
+         * Project::query()
+         *   ->search([
+         *       'projects.name',
+         *       'users.name' => fn ($query) => $query
+         *          ->leftJoin('project_user', 'projects.id', '=', 'project_user.project_id')
+         *          ->leftJoin('users', 'users.id', '=', 'project_user.user_id'),
+         *       'projects.description',
+         *   ])
+         *   ->get();
+         *
+         * @param array $columns
+         * @param string|null $keyword
+         * @static
+         */
+        public static function gradinSearch($columns, $keyword = null)
+        {
+            return \Illuminate\Database\Eloquent\Builder::gradinSearch($columns, $keyword);
+        }
+
+        /**
+         * MySQL order by but natural sort, e.g: file1, file2, file10
+         *
+         * @param string $column
+         * @static
+         */
+        public static function naturalSort($column)
+        {
+            return \Illuminate\Database\Eloquent\Builder::naturalSort($column);
+        }
+
+        /**
+         * Convert a datetime column from UTC to the timezone specified in the request header.
+         *
+         * @param string $columnName
+         * @return string
+         * @static
+         */
+        public static function convertTz($columnName)
+        {
+            return \Illuminate\Database\Eloquent\Builder::convertTz($columnName);
+        }
+
+        /**
+         * Select the day of the month from a datetime column, converting it to the timezone specified in the request header.
+         *
+         * @param string $columnName
+         * @param string $alias
+         * @return \Illuminate\Database\Eloquent\Builder|static
+         * @static
+         */
+        public static function selectTzDay($columnName, $alias = '')
+        {
+            return \Illuminate\Database\Eloquent\Builder::selectTzDay($columnName, $alias);
+        }
+
+        /**
+         * @see \App\Providers\AppServiceProvider::boot()
+         * @param string $columnName
+         * @param string $alias
+         * @return \Illuminate\Database\Eloquent\Builder|static
+         * @static
+         */
+        public static function selectTzMonth($columnName, $alias = '')
+        {
+            return \Illuminate\Database\Eloquent\Builder::selectTzMonth($columnName, $alias);
+        }
+
+        /**
+         * @see \App\Providers\AppServiceProvider::boot()
+         * @param string $columnName
+         * @param string $alias
+         * @return \Illuminate\Database\Eloquent\Builder|static
+         * @static
+         */
+        public static function selectTzYear($columnName, $alias = '')
+        {
+            return \Illuminate\Database\Eloquent\Builder::selectTzYear($columnName, $alias);
+        }
+
+        /**
+         * Tap into the query builder instance to perform additional operations.
+         *
+         * This closure receives an instance of \Illuminate\Database\Eloquent\Builder
+         * to allow further customization or manipulation of the query.
+         *
+         * @param \Closure(Builder):  Builder|void  $callback
+         * @return \Illuminate\Database\Eloquent\Builder|static
+         * @static
+         */
+        public static function tapQuery($callback)
+        {
+            return \Illuminate\Database\Eloquent\Builder::tapQuery($callback);
+        }
+
+        /**
+         * WhereBetween from request date_start and date_end for given column name.
+         *
+         * @param string $columnName
+         * @return \Illuminate\Database\Eloquent\Builder|static
+         * @static
+         */
+        public static function whereDateBetween($columnName)
+        {
+            return \Illuminate\Database\Eloquent\Builder::whereDateBetween($columnName);
         }
 
         /**

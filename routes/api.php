@@ -1,34 +1,30 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\ProductController;
-use App\Http\Controllers\AdminUserController;
 
-/*
-|--------------------------------------------------------------------------
-| Admin Routes
-|--------------------------------------------------------------------------
-*/
-Route::middleware('auth:sanctum')->prefix('admin')->name('admin.')->group(function () {
+require base_path('routes/modules/general.php');
 
-    // User Management
-    Route::prefix('users')->controller(AdminUserController::class)->group(function (): void {
-        Route::get('', 'index')->name('users.index');
-        Route::post('', 'store')->name('users.store');
-        Route::get('{user}', 'show')->name('users.show');
-        Route::put('{user}', 'update')->name('users.update');
-        Route::patch('{user}/toggle-status', 'toggleStatus')->name('users.toggle-status');
+// 2. Group yang butuh login (Sanctum)
+Route::middleware(['auth:sanctum'])->group(function (): void {
+    // Khusus ADMIN (Hanya Superadmin/Admin yang bisa lewat)
+    Route::middleware(['route.admin'])->group(function (): void {
+        require base_path('routes/modules/admin.php');
     });
 
-    // Product Management
-    Route::prefix('products')->controller(ProductController::class)->group(function (): void {
-        Route::get('', 'index')->name('products.index');
-        Route::post('', 'store')->name('products.store');
+    // Khusus GUDANG
+    Route::middleware(['route.warehouse'])->group(function (): void {
+        require base_path('routes/modules/warehouse.php');
     });
 });
 
-// Route public atau user biasa
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+// require base_path('routes/modules/general.php');
+
+// // Route yang butuh Login & Role Admin
+// Route::middleware(['auth:sanctum', 'route.admin'])->group(function () {
+//     require base_path('routes/modules/admin.php');
+// });
+
+// // Route khusus orang Gudang
+// Route::middleware(['auth:sanctum', 'route.warehouse'])->group(function () {
+//     require base_path('routes/modules/warehouse.php');
+// });
