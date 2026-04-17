@@ -18,10 +18,10 @@ return new class extends Migration
             $table->foreignId('category_id')->constrained('categories');
             $table->string('unit');
             $table->string('size_info');
-            $table->integer('purchase_price')->default(0);
             $table->integer('min_stock')->default(5);
             $table->string('image_url')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->timestamps();
         });
     }
 
