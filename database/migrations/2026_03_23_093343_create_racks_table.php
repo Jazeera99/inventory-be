@@ -11,10 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('racks', function (Blueprint $table) {
+        Schema::create('racks', function (Blueprint $table): void {
             $table->id();
-            $table->string('rack_code')->unique();
-            $table->string('warehouse_name');
+            $table->string('location_code')->unique();
+            $table->string('rack_name');
+            $table->integer('column_number');
+            $table->integer('level_number');
+            $table->boolean('is_active')->default(true);
+            $table->boolean('is_maintenance')->default(false);
             $table->timestamps();
         });
     }

@@ -14,6 +14,12 @@ class DatabaseSeeder extends Seeder
         // Urutan pemanggilan sangat penting! Role dulu baru User
         $this->call([
             RoleSeeder::class,
+            UserSeeder::class,
+            RackSeeder::class,
+            CategorySeeder::class,
+            ProductSeeder::class,
+            ProductLocationSeeder::class,
+            StockTransactionSeeder::class,
         ]);
     }
 

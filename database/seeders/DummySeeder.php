@@ -11,6 +11,8 @@ class DummySeeder extends Seeder
      */
     public static $seeder = [
         RoleSeeder::class,
+        UserSeeder::class,
+
     ];
 
     /**

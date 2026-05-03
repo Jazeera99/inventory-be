@@ -27,6 +27,23 @@ class RouteAdmin
             return $next($request);
         }
 
+        $adminPermissions = [
+            'Manajemen Rak',
+            'Daftar Produk',
+            'Produk Masuk',
+            'Produk Keluar',
+            'Stock Adjusment',
+            'Daftar Stok',
+            'Kartu Stok',
+            'Manajemen User',
+            'Hak Akses',
+        ];
+
+        // Cek apakah user punya salah satu dari daftar di atas
+        if (count(array_intersect($adminPermissions, $permissions)) > 0) {
+            return $next($request);
+        }
+
         abort(403, 'Akses ditolak.');
     }
 }

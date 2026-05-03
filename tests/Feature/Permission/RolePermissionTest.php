@@ -38,15 +38,17 @@ class RolePermissionTest extends TestCase
      */
     public function test_store(): void
     {
-        $form = [
-            'role_name' => 'Role Testing',
-            'permissions' => ['Daftar Produk'],
-        ];
-
         $url = route('admin.role.store');
         $this->url($url);
 
-        $this->assertUserPermission(fn () => $this->postJson($url, $form))
+        $this->assertUserPermission(function () use ($url) {
+            $form = [
+                'role_name' => 'Role Testing '.uniqid(),
+                'permissions' => ['Daftar Produk'],
+            ];
+
+            return $this->postJson($url, $form);
+        })
             ->allow($this->createSuperadmin())
             ->forbid($this->createWarehouseAdmin())
             ->forbid($this->createStaff());
