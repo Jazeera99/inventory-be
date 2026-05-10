@@ -7,6 +7,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductLocationController;
 use App\Http\Controllers\RackController;
+use App\Http\Controllers\StockLedgerController;
 use App\Http\Controllers\StockTransactionController;
 use App\Models\Product;
 use App\Models\ProductLocation;
@@ -74,4 +75,8 @@ Route::prefix('admin/stock-transactions')->controller(StockTransactionController
     Route::post('', 'store')->name('admin.stock-transaction.store')->can('create', StockTransaction::class);
     // Rute show menggunakan transaction_no sebagai parameter agar bisa diklik
     Route::get('{transaction_no}', 'show')->name('admin.stock-transaction.show')->can('view', 'stockTransaction');
+});
+
+Route::prefix('admin/stock-ledger')->controller(StockLedgerController::class)->group(function (): void {
+    Route::get('', 'index')->name('admin.stock-ledger.index');
 });
