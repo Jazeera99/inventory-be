@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminInitController;
 use App\Http\Controllers\AdminRoleController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductLocationController;
 use App\Http\Controllers\RackController;
@@ -75,8 +76,15 @@ Route::prefix('admin/stock-transactions')->controller(StockTransactionController
     Route::post('', 'store')->name('admin.stock-transaction.store')->can('create', StockTransaction::class);
     // Rute show menggunakan transaction_no sebagai parameter agar bisa diklik
     Route::get('{transaction_no}', 'show')->name('admin.stock-transaction.show')->can('view', 'stockTransaction');
+    Route::delete('{id}', 'destroy')->name('admin.stock-transaction.destroy');
 });
 
 Route::prefix('admin/stock-ledger')->controller(StockLedgerController::class)->group(function (): void {
     Route::get('', 'index')->name('admin.stock-ledger.index');
+    Route::get('expired-options', 'getExpiredOptions');
+    Route::get('summary', 'summary')->name('admin.stock-ledger.summary');
+});
+
+Route::prefix('admin/dashboard')->controller(DashboardController::class)->group(function (): void {
+    Route::get('summary', 'getDashboardSummary')->name('admin.dashboard.summary');
 });

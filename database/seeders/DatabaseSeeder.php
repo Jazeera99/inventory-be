@@ -2,8 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Product;
-use App\Models\ProductLocation;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -20,15 +18,10 @@ class DatabaseSeeder extends Seeder
             RackSeeder::class,
             CategorySeeder::class,
             ProductSeeder::class,
-            ProductLocationSeeder::class,
             StockTransactionSeeder::class,
         ]);
 
-        $this->command->info('Menyinkronkan stok global...');
-        $allLocations = ProductLocation::all();
-        foreach ($allLocations as $loc) {
-            Product::where('sku', $loc->product_sku)->increment('stock', $loc->qty);
-        }
+        $this->command->info('Database berhasil di-seed dengan riwayat transaksi lengkap!');
     }
 
     /**

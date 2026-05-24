@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class ProductFactory extends Factory
 {
+    protected $model = Product::class;
+
     /**
      * Define the model's default state.
      *
@@ -18,20 +20,19 @@ class ProductFactory extends Factory
      */
     public function definition(): array
     {
+        $brand = $this->faker->regexify('[A-Z]{3}');
+        $type = $this->faker->regexify('[A-Z]{3}');
+
         return [
-            'sku' => strtoupper($this->faker->unique()->bothify('SM-###-???')),
-            'name' => $this->faker->randomElement([
-                'Minyak Goreng Sawit 2L',
-                'Beras Setra Ramos 25kg',
-                'Gula Pasir Putih 1kg x 20',
-                'Mie Instan Goreng (Karton)',
-                'Tepung Terigu Segitiga (Sack)'
-            ]),
-            'brand' => $this->faker->randomElement(['Bimoli', 'Fortune', 'Indofood', 'Gulaku', 'Bogasari']),
+            'sku' => $brand.'-GEN-'.$this->faker->unique()->numberBetween(100, 999),
+            'product_name' => $this->faker->words(3, true),
             'category_id' => Category::factory(),
-            'unit' => $this->faker->randomElement(['Dus', 'Karton', 'Sack', 'Ball']),
-            'size_info' => $this->faker->randomElement(['Isi 12', 'Isi 24', '25 KG', '50 KG']),
-            'min_stock' => 50,
+            'brand' => $brand,
+            'type' => $type,
+            'packaging' => 'Refil',
+            'size' => '1000 ml',
+            'stock' => 0,
+            'min_stock' => 5,
             'is_active' => true,
         ];
     }

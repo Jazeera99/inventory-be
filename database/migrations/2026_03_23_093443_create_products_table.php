@@ -11,15 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('products', function (Blueprint $table) {
+        Schema::create('products', function (Blueprint $table): void {
             $table->string('sku')->primary();
-            $table->string('name');
+            $table->string('product_name');
+            $table->foreignId('category_id')->constrained();
             $table->string('brand')->nullable();
-            $table->foreignId('category_id')->constrained('categories');
-            $table->string('unit');
-            $table->string('size_info');
+            $table->string('type')->nullable();
+            $table->string('packaging')->nullable();
+            $table->string('size')->nullable();
+            $table->integer('stock')->default(0);
             $table->integer('min_stock')->default(5);
-            $table->string('image_url')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
