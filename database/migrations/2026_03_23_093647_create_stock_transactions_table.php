@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('stock_transactions', function (Blueprint $table) {
+        Schema::create('stock_transactions', function (Blueprint $table): void {
             $table->string('transaction_no')->primary();
-            $table->enum('type', ['MASUK', 'KELUAR', 'PINDAH']);
+            $table->enum('type', ['IN', 'OUT', 'MOVE', 'ADJUSTMENT']);
             $table->dateTime('date');
             $table->foreignId('user_id')->constrained('users');
-            $table->text('notes')->nullable();
+            $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

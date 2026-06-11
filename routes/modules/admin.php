@@ -35,8 +35,11 @@ Route::prefix('admin/users')->controller(AdminUserController::class)->group(func
 Route::prefix('admin/racks')->controller(RackController::class)->group(function (): void {
     Route::get('', 'index')->name('admin.rack.index');
     Route::post('', 'store')->name('admin.rack.store');
+    Route::get('recommendations', 'recommendations')->name('admin.rack.recommendations');
+    Route::put('{rack}', 'update')->name('admin.rack.update');
     Route::post('generate', 'generate')->name('admin.rack.generate');
     Route::patch('{rack}/toggle-maintenance', 'toggleMaintenance')->name('admin.rack.toggle-maintenance');
+    Route::get('{rack}/evacuation-contents', 'getContentsForEvacuation')->name('admin.rack.evacuation-contents');
 });
 
 Route::prefix('admin/categories')->controller(CategoryController::class)->group(function (): void {

@@ -11,18 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('stock_ledgers', function (Blueprint $table) {
+        Schema::create('stock_ledgers', function (Blueprint $table): void {
             $table->id();
             $table->string('product_sku');
-            $table->foreign('product_sku')->references('sku')->on('products');
-            $table->string('transaction_ref');
-            $table->enum('type', ['MASUK', 'KELUAR', 'ADJ', 'PINDAH']);
+            $table->foreign('product_sku')->references('sku')->on('products')->onDelete('cascade')->onUpdate('cascade');
+            $table->string('transaction_no');
+            $table->enum('type', ['IN', 'OUT', 'MOVE', 'ADJUSTMENT']);
             $table->foreignId('rack_id')->constrained('racks');
-            $table->integer('quantity');
+            $table->date('expired_at');
+            $table->integer('qty');
             $table->integer('balance_before');
             $table->integer('balance_after');
             $table->foreignId('user_id')->constrained('users');
-            $table->string('user_name_snapshot');
             $table->string('note')->nullable();
             $table->timestamps();
         });
