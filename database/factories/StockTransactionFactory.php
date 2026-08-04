@@ -28,15 +28,18 @@ class StockTransactionFactory extends Factory
             'ADJUSTMENT' => 'ADJ',
             default => 'GEN'
         };
-        $date = now()->format('Ymd');
+        $randomDateTime = $this->faker->dateTimeBetween('2026-05-01 00:00:00', '2026-08-2 23:59:59');
+        $date = $randomDateTime->format('Ymd');
         $sequence = str_pad($this->faker->unique()->numberBetween(1, 999), 4, '0', STR_PAD_LEFT);
 
         return [
             'transaction_no' => "TRX-{$typeCode}-{$date}-{$sequence}",
             'type' => $type,
-            'date' => now(),
+            'date' => $randomDateTime->format('Y-m-d'),
             'user_id' => User::first()?->id ?? User::factory(),
             'deleted_by' => null,
+            'created_at' => $randomDateTime,
+            'updated_at' => $randomDateTime,
         ];
     }
 
@@ -57,14 +60,17 @@ class StockTransactionFactory extends Factory
                 default => 'GEN'
             };
 
-            $date = now()->format('Ymd');
+            $randomDateTime = $this->faker->dateTimeBetween('2026-05-01 00:00:00', '2026-07-14 23:59:59');
+            $date = $randomDateTime->format('Ymd');
             $sequence = str_pad((string) $this->faker->unique()->numberBetween(1, 999), 4, '0', STR_PAD_LEFT);
 
             return [
                 'type' => $finalType,
                 'transaction_no' => "TRX-{$typeCode}-{$date}-{$sequence}",
                 'deleted_by' => User::first()?->id ?? User::factory(),
-                'deleted_at' => now(),
+                'deleted_at' => $randomDateTime,
+                'created_at' => $randomDateTime,
+                'updated_at' => $randomDateTime,
             ];
         });
     }

@@ -70,13 +70,20 @@ class StockTransactionStoreRequest extends FormRequest
 
             // 2. Bandingkan dengan kapasitas asli di database
             foreach ($incomingTotalsPerRack as $rackId => $totalIncomingQty) {
-                $rack = Rack::find($rackId);
+                $rack = Rack::query()->find($rackId);
                 if (! $rack) {
                     continue;
                 }
 
+                $isLoadingDock = str_contains(strtolower($rack->rack_name), 'loading') ||
+                                 str_contains(strtolower($rack->location_code), 'ld');
+
+                if ($isLoadingDock) {
+                    continue;
+                }
+
                 // Ambil jumlah qty barang yang sudah ada di rak tersebut sekarang
-                $currentStockInRack = ProductLocation::where('rack_id', $rackId)->sum('qty');
+                $currentStockInRack = ProductLocation::query()->where('rack_id', $rackId)->sum('qty');
 
                 // Cari sisa space kosong
                 $availableSpace = $rack->capacity - $currentStockInRack;

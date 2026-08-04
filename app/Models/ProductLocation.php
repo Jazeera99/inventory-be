@@ -40,12 +40,15 @@ class ProductLocation extends Model
         'rack_id',
         'qty',
         'batch_code',
+        'unit_cost',
         'expired_at',
+        'status',
     ];
 
     protected $casts = [
         'qty' => 'integer',
-        'expired_at' => 'date',
+        'unit_cost' => 'float',
+        'expired_at' => 'datetime',
     ];
 
     public function product()

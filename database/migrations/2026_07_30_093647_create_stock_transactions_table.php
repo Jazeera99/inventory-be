@@ -16,6 +16,7 @@ return new class extends Migration
             $table->enum('type', ['IN', 'OUT', 'MOVE', 'ADJUSTMENT']);
             $table->dateTime('date');
             $table->foreignId('user_id')->constrained('users');
+            $table->foreignId('stock_order_id')->nullable()->constrained('stock_orders')->nullOnDelete();
             $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
             $table->softDeletes();
             $table->timestamps();

@@ -13,6 +13,8 @@ use Illuminate\Support\Carbon;
  * @property string $type
  * @property string $date
  * @property int $user_id
+ * @property int|null $deleted_by
+ * @property Carbon|null $deleted_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User|null $deletedByUser
@@ -29,6 +31,8 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StockTransaction query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StockTransaction whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StockTransaction whereDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|StockTransaction whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|StockTransaction whereDeletedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StockTransaction whereTransactionNo($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StockTransaction whereType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StockTransaction whereUpdatedAt($value)
@@ -55,8 +59,14 @@ class StockTransaction extends Model
         'type',
         'date',
         'user_id',
+        'stock_order_id',
         'deleted_by',
     ];
+
+    public function stockOrder()
+    {
+        return $this->belongsTo(StockOrder::class, 'stock_order_id');
+    }
 
     public function product()
     {

@@ -76,6 +76,10 @@
         ],
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ],
+        "publish-env": [
+            "scp .env.production laura@s2.gradin.co.id:webapps/laura-api/.env",
+            "ssh laura@s2.gradin.co.id 'cd webapps/laura-api && php artisan optimize && php artisan queue:restart && php artisan reverb:restart'"
         ]
     },
     "extra": {

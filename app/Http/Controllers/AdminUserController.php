@@ -13,35 +13,12 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 
 class AdminUserController extends Controller
 {
-    private function validateAdmin(): void
-    {
-        $user = auth()->user();
-
-        if (! $user || ! $user->role) {
-            abort(403, 'Akses ditolak.');
-        }
-
-        $permissions = $user->role->permissions;
-
-        // LOGIKA KUNCI: Jika ada '*', dia adalah dewa, izinkan semua!
-        if (is_array($permissions) && in_array('*', $permissions)) {
-            return;
-        }
-
-        // Jika bukan superadmin, cek apakah dia punya akses spesifik ke manajemen user
-        if (is_array($permissions) && in_array('Manajemen User', $permissions)) {
-            return;
-        }
-
-        abort(403, 'Akses ditolak.');
-    }
-
     /**
      * User can see users with role equal or lower than theirs
      */
     public function index(Request $request): JsonResource
     {
-        $this->validateAdmin();
+        $this->authorize('Manajemen User');
 
         $users = User::query()
             ->with('role')
@@ -61,7 +38,7 @@ class AdminUserController extends Controller
      */
     public function store(AdminUserStoreRequest $request)
     {
-        $this->validateAdmin();
+        $this->authorize('Manajemen User');
         $validated = $request->validated();
 
         $user = new User();
@@ -81,10 +58,15 @@ class AdminUserController extends Controller
      */
     public function update(AdminUserUpdateRequest $request, User $user)
     {
-        $this->validateAdmin();
+        $this->authorize('Manajemen User');
+
+        if ($user->username === 'admin' || strtolower($user->role?->role_name ?? '') === 'superadmin') {
+        return response()->json([
+            'message' => 'Akun Superadmin tidak dapat diubah dari halaman ini demi keamanan sistem.',
+        ], 403);
+    }
 
         $validated = $request->validated();
-
         $user->username = $validated['username'];
         $user->full_name = $validated['full_name'];
         $user->role_id = $validated['role_id'];
@@ -103,16 +85,24 @@ class AdminUserController extends Controller
      */
     public function toggleStatus(User $user): JsonResponse
     {
-        $this->validateAdmin();
+        $this->authorize('Manajemen User');
 
         Fail::group(function (Fail $fail) use ($user): void {
             $fail->if($user->id === auth()->id(), [
                 'user' => 'Anda tidak dapat menonaktifkan akun Anda sendiri.',
             ]);
+
+            $fail->if($user->username === 'admin' || $user->id === 1|| strtolower($user->role?->role_name ?? '') === 'superadmin', [
+                'user' => 'Akun Administrator Utama (Role Superadmin) tidak dapat dinonaktifkan demi keamanan sistem.',
+            ]);
         });
 
         $user->is_active = ! $user->is_active;
         $user->save();
+
+        if (! $user->is_active) {
+            $user->tokens()->delete();
+        }
 
         return response()->json([
             'id' => $user->id,

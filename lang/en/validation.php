@@ -202,6 +202,7 @@ return [
         'full_name' => 'full name',
         'is_active' => 'active status',
         'items' => 'items',
+        'capacity' => 'capacity',
         'level_number' => 'level number',
         'location_code' => 'location code (unique)',
         'min_stock' => 'minimum stock',

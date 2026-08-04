@@ -4,15 +4,15 @@ use App\Http\Controllers\AdminInitController;
 use App\Http\Controllers\AdminRoleController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductLocationController;
 use App\Http\Controllers\RackController;
 use App\Http\Controllers\StockLedgerController;
+use App\Http\Controllers\StockOrderController;
 use App\Http\Controllers\StockTransactionController;
-use App\Models\Product;
-use App\Models\ProductLocation;
-use App\Models\StockTransaction;
+use App\Http\Controllers\SupplierController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('auth/init', AdminInitController::class)->name('auth.init');
@@ -35,7 +35,7 @@ Route::prefix('admin/users')->controller(AdminUserController::class)->group(func
 Route::prefix('admin/racks')->controller(RackController::class)->group(function (): void {
     Route::get('', 'index')->name('admin.rack.index');
     Route::post('', 'store')->name('admin.rack.store');
-    Route::get('recommendations', 'recommendations')->name('admin.rack.recommendations');
+    Route::post('recommendations', 'recommendations')->name('admin.rack.recommendations');
     Route::put('{rack}', 'update')->name('admin.rack.update');
     Route::post('generate', 'generate')->name('admin.rack.generate');
     Route::patch('{rack}/toggle-maintenance', 'toggleMaintenance')->name('admin.rack.toggle-maintenance');
@@ -50,6 +50,22 @@ Route::prefix('admin/categories')->controller(CategoryController::class)->group(
     Route::patch('{category}/toggle-active', 'toggleActive')->name('admin.category.toggle-active');
 });
 
+Route::prefix('admin/suppliers')->controller(SupplierController::class)->group(function (): void {
+    Route::get('', 'index')->name('admin.supplier.index');
+    Route::post('', 'store')->name('admin.supplier.store');
+    Route::get('{supplier}', 'show')->name('admin.supplier.show');
+    Route::put('{supplier}', 'update')->name('admin.supplier.update');
+    Route::patch('{supplier}/toggle-active', 'toggleActive')->name('admin.supplier.toggle-active');
+});
+
+Route::prefix('admin/customers')->controller(CustomerController::class)->group(function (): void {
+    Route::get('', 'index')->name('admin.customer.index');
+    Route::post('', 'store')->name('admin.customer.store');
+    Route::get('{customer}', 'show')->name('admin.customer.show');
+    Route::put('{customer}', 'update')->name('admin.customer.update');
+    Route::patch('{customer}/toggle-active', 'toggleActive')->name('admin.customer.toggle-active');
+});
+
 // Route::prefix('admin/products')->controller(ProductController::class)->group(function (): void {
 //     Route::get('', 'index')->name('admin.product.index');
 //     Route::post('', 'store')->name('admin.product.store');
@@ -60,26 +76,34 @@ Route::prefix('admin/categories')->controller(CategoryController::class)->group(
 // });
 
 Route::prefix('admin/products')->controller(ProductController::class)->group(function (): void {
-    Route::get('', 'index')->name('admin.product.index')->can('viewAny', Product::class);
-    Route::post('', 'store')->name('admin.product.store')->can('create', Product::class);
-    Route::put('{product:sku}', 'update')->name('admin.product.update')->can('update', 'product');
-    Route::delete('{product:sku}', 'destroy')->name('admin.product.destroy')->can('delete', 'product');
-    Route::patch('{product:sku}/toggle-active', 'toggleActive')->name('admin.product.toggle-active')->can('toggleActive', 'product');
+    Route::get('', 'index')->name('admin.product.index');
+    Route::post('', 'store')->name('admin.product.store');
+    Route::put('{product:sku}', 'update')->name('admin.product.update');
+    Route::delete('{product:sku}', 'destroy')->name('admin.product.destroy');
+    Route::patch('{product:sku}/toggle-active', 'toggleActive')->name('admin.product.toggle-active');
 });
 
 Route::prefix('admin/product-locations')->controller(ProductLocationController::class)->group(function (): void {
-    Route::get('', 'index')->name('admin.product-location.index')->can('viewAny', ProductLocation::class);
-    Route::post('', 'store')->name('admin.product-location.store')->can('create', ProductLocation::class);
-    Route::get('{product_location}', 'show')->name('admin.product-location.show')->can('view', 'product_location');
+    Route::get('', 'index')->name('admin.product-location.index');
+    Route::post('', 'store')->name('admin.product-location.store');
+    Route::get('{product_location}', 'show')->name('admin.product-location.show');
+});
+
+Route::prefix('admin/stock-orders')->controller(StockOrderController::class)->group(function (): void {
+    Route::get('', 'index')->name('admin.stock-order.index');
+    Route::post('', 'store')->name('admin.stock-order.store');
+    Route::get('{stock_order}', 'show')->name('admin.stock-order.show');
+    Route::put('{stock_order}', 'update')->name('admin.stock-order.update');
+    Route::post('{id}/cancel', 'cancel')->name('admin.stock-order.cancel');
 });
 
 // Rute untuk Stock Transactions (Riwayat Masuk/Keluar)
 Route::prefix('admin/stock-transactions')->controller(StockTransactionController::class)->group(function (): void {
-    Route::get('', 'index')->name('admin.stock-transaction.index')->can('viewAny', StockTransaction::class);
-    Route::post('', 'store')->name('admin.stock-transaction.store')->can('create', StockTransaction::class);
-    // Rute show menggunakan transaction_no sebagai parameter agar bisa diklik
-    Route::get('{transaction_no}', 'show')->name('admin.stock-transaction.show')->can('view', 'stockTransaction');
+    Route::get('', 'index')->name('admin.stock-transaction.index');
+    Route::post('', 'store')->name('admin.stock-transaction.store');
+    Route::get('{transaction_no}', 'show')->name('admin.stock-transaction.show');
     Route::delete('{id}', 'destroy')->name('admin.stock-transaction.destroy');
+    Route::post('check-fefo', 'checkFefoBeforeOut')->name('admin.stock-transaction.check-fefo');
 });
 
 Route::prefix('admin/stock-ledger')->controller(StockLedgerController::class)->group(function (): void {

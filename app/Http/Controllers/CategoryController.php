@@ -18,7 +18,8 @@ class CategoryController extends Controller
      */
     public function index(): JsonResource
     {
-        $this->authorize('viewAny', Category::class);
+        $this->authorize('Lihat Kategori');
+
         $categories = Category::query()
             ->when(request('search'), function ($query, $search): void {
                 $query->where('category_name', 'like', "%{$search}%");
@@ -34,7 +35,7 @@ class CategoryController extends Controller
      */
     public function store(CategoryStoreRequest $request)
     {
-        $this->authorize('create', Category::class);
+        $this->authorize('Manajemen Kategori');
 
         $category = Category::create($request->validated());
 
@@ -46,7 +47,7 @@ class CategoryController extends Controller
      */
     public function show(Category $category)
     {
-        $this->authorize('viewAny', $category);
+        $this->authorize('Lihat Kategori');
 
         return new CategoryResource($category);
     }
@@ -56,7 +57,7 @@ class CategoryController extends Controller
      */
     public function update(CategoryUpdateRequest $request, Category $category)
     {
-        $this->authorize('update', $category);
+        $this->authorize('Manajemen Kategori');
 
         $category->update($request->validated());
 
@@ -66,14 +67,14 @@ class CategoryController extends Controller
     /**
      * Toggle category active status. If currently active, it will be deactivated.
      */
-    public function toggleActive(Category $category)
-    {
-        $this->authorize('update', $category);
+    // public function toggleActive(Category $category)
+    // {
+    //     $this->authorize('Manajemen Kategori');
 
-        $category->update([
-            'is_active' => ! $category->is_active,
-        ]);
+    //     $category->update([
+    //         'is_active' => ! $category->is_active,
+    //     ]);
 
-        return new CategoryResource($category);
-    }
+    //     return new CategoryResource($category);
+    // }
 }

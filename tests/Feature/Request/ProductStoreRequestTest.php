@@ -31,6 +31,8 @@ class ProductStoreRequestTest extends TestCase
             'product_name' => '',
             'category_id' => '',
             'brand' => '',
+            'packaging' => '',
+            'size' => '',
             'min_stock' => '',
         ];
         $this->assertJsonReqErrors($form, [
@@ -38,6 +40,8 @@ class ProductStoreRequestTest extends TestCase
             'product_name' => __('validation.required'),
             'category_id' => __('validation.required'),
             'brand' => __('validation.required'),
+            'packaging' => __('validation.required'),
+            'size' => __('validation.required'),
             'min_stock' => __('validation.required'),
         ]);
     }

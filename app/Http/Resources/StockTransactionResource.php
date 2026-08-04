@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -34,13 +35,13 @@ class StockTransactionResource extends JsonResource
 
                 // --- MOVE ---
                 'target_rack_id' => $item->target_rack_id,
-                'target_rack_name' => $item->targetRack ? $item->targetRack->rack_name : '-',
+                'target_rack_name' => $item->targetRack ? $item->targetRack->location_code : '-',
 
                 // --- ADJUSTMENT ---
                 'qty_before' => $item->qty_before,
                 'qty_after' => $item->qty_after,
 
-                'expired_at' => $item->expired_at,
+                'expired_at' => Carbon::parse($item->expired_at)->format('Y-m-d'),
                 'notes' => $item->notes,
             ]),
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),

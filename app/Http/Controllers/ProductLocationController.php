@@ -15,8 +15,10 @@ class ProductLocationController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('Transaksi');
+
         $query = ProductLocation::with(['product', 'rack'])
-            ->where('qty', '>', 0); // Hanya ambil yang stoknya masih ada
+            ->where('qty', '>', 0);
 
         $query->when($request->search, function ($q, $search): void {
             $q->where('product_sku', 'like', "%{$search}%")
@@ -48,6 +50,7 @@ class ProductLocationController extends Controller
      */
     public function store(ProductLocationStoreRequest $request)
     {
+        $this->authorize('Transaksi');
         // Logika batch_code otomatis: SKU + Tanggal Expired Ymd
         $batchCode = $request->product_sku.'-'.date('Ymd', strtotime($request->expired_at));
 
@@ -77,6 +80,8 @@ class ProductLocationController extends Controller
      */
     public function show(ProductLocation $productLocation)
     {
+        $this->authorize('Transaksi');
+
         return new ProductLocationResource($productLocation->load(['product', 'rack']));
     }
 }

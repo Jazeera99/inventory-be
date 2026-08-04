@@ -9,39 +9,16 @@ use App\Models\Role;
 
 class AdminRoleController extends Controller
 {
-    private function validateAdmin(): void
-    {
-        $user = auth()->user();
-
-        if (! $user || ! $user->role) {
-            abort(403, 'Akses ditolak.');
-        }
-
-        $permissions = $user->role->permissions;
-
-        // LOGIKA KUNCI: Jika ada '*', dia adalah dewa, izinkan semua!
-        if (is_array($permissions) && in_array('*', $permissions)) {
-            return;
-        }
-
-        // Jika bukan superadmin, cek apakah dia punya akses spesifik ke hak akses
-        if (is_array($permissions) && in_array('Hak Akses', $permissions)) {
-            return;
-        }
-
-        abort(403, 'Akses ditolak.');
-    }
-
     public function index()
     {
-        $this->validateAdmin();
+        $this->authorize('Hak Akses');
 
         return AdminRoleResource::collection(Role::all());
     }
 
     public function store(AdminRoleStoreRequest $request)
     {
-        $this->validateAdmin();
+        $this->authorize('Hak Akses');
 
         $role = Role::create($request->validated());
 
@@ -50,7 +27,13 @@ class AdminRoleController extends Controller
 
     public function update(AdminRoleUpdateRequest $request, Role $role)
     {
-        $this->validateAdmin();
+        $this->authorize('Hak Akses');
+
+        if (strtolower($role->role_name) === 'superadmin') {
+        return response()->json([
+            'message' => 'Role Superadmin sistem tidak dapat diubah!',
+        ], 403);
+    }
 
         $role->update($request->validated());
 
@@ -59,9 +42,15 @@ class AdminRoleController extends Controller
 
     public function destroy(Role $role)
     {
-        $this->validateAdmin();
+        $this->authorize('Hak Akses');
 
-        $role->delete();
+        if (strtolower($role->role_name) === 'superadmin') {
+            return response()->json([
+                'message' => 'Role Superadmin bawaan sistem tidak dapat dihapus!',
+            ], 403);
+        }
+
+        $role->delete($role->id);
 
         return response()->json(['message' => 'Role dihapus']);
     }

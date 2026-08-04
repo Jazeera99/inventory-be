@@ -46,7 +46,28 @@ class RackStoreRequestTest extends TestCase
             'rack_name' => __('validation.required'),
             'column_number' => __('validation.required'),
             'level_number' => __('validation.required'),
+            'capacity' => __('validation.required'),
         ]);
+    }
+
+    /**
+     * Test error message when field is not provided or empty.
+     */
+    public function test_column_and_level_not_required_for_ld_rack(): void
+    {
+        $form = [
+            'location_code' => 'LD-01',
+            'rack_name' => 'Loading Dock Utama',
+            'capacity' => 20,
+            // column_number dan level_number dikosongkan atau diisi 0
+            'column_number' => 0,
+            'level_number' => 0,
+        ];
+
+        $response = $this->postJson($this->url, $form);
+
+        // Memastikan tidak terkena error validation required/min untuk kolom & level
+        $response->assertStatus(201);
     }
 
     /**
@@ -61,6 +82,7 @@ class RackStoreRequestTest extends TestCase
             'rack_name' => 'Rak Baru',
             'column_number' => 1,
             'level_number' => 2,
+            'capacity' => 15,
         ];
 
         $this->assertJsonReqErrors($form, [
@@ -78,6 +100,7 @@ class RackStoreRequestTest extends TestCase
             'rack_name' => 12345,
             'column_number' => 'bukan-angka',
             'level_number' => 'bukan-angka',
+            'capacity' => 'bukan-angka',
         ];
 
         $this->assertJsonReqErrors($form, [
@@ -85,6 +108,7 @@ class RackStoreRequestTest extends TestCase
             'rack_name' => __('validation.string'),
             'column_number' => __('validation.integer'),
             'level_number' => __('validation.integer'),
+            'capacity' => __('validation.integer'),
         ]);
     }
 
@@ -98,11 +122,30 @@ class RackStoreRequestTest extends TestCase
             'rack_name' => str_repeat('B', 101),
             'column_number' => 1,
             'level_number' => 1,
+            'capacity' => 15,
         ];
 
         $this->assertJsonReqErrors($form, [
             'location_code' => __('validation.max.string', ['max' => 255]),
             'rack_name' => __('validation.max.string', ['max' => 100]),
+        ]);
+    }
+
+    /**
+     * Test error message when numeric fields are bigest than minimum value.
+     */
+    public function test_capacity_max_value(): void
+    {
+        $form = [
+            'location_code' => 'B1-1',
+            'rack_name' => 'Rak Gudang',
+            'column_number' => 1,
+            'level_number' => 1,
+            'capacity' => 26, // Mengisi 26 (melebihi batas maksimal 25)
+        ];
+
+        $this->assertJsonReqErrors($form, [
+            'capacity' => __('validation.max.numeric', ['max' => 25]),
         ]);
     }
 
@@ -116,6 +159,7 @@ class RackStoreRequestTest extends TestCase
             'rack_name' => 'Rak Gudang Utama',
             'column_number' => 5,
             'level_number' => 3,
+            'capacity' => 50,
         ];
 
         $response = $this->postJson($this->url, $form);
@@ -148,11 +192,13 @@ class RackStoreRequestTest extends TestCase
             'rack_name' => 'Rak Test',
             'column_number' => 0,
             'level_number' => -5,
+            'capacity' => 0,
         ];
 
         $this->assertJsonReqErrors($form, [
             'column_number' => __('validation.min.numeric', ['min' => 1]),
             'level_number' => __('validation.min.numeric', ['min' => 1]),
+            'capacity' => __('validation.min.numeric', ['min' => 1]),
         ]);
     }
 
@@ -166,6 +212,7 @@ class RackStoreRequestTest extends TestCase
             'rack_name' => 'Rak Test',
             'column_number' => 1,
             'level_number' => 1,
+            'capacity' => 15,
             'is_active' => 'bukan-boolean',
             'is_maintenance' => 123,
         ];

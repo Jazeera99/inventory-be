@@ -26,7 +26,9 @@ class ProductLocationStoreRequest extends FormRequest
             'product_sku' => 'required|exists:products,sku',
             'rack_id' => 'required|exists:racks,id',
             'qty' => 'required|integer|min:1',
+            'unit_cost' => 'nullable|numeric|min:0',
             'expired_at' => 'required|date|after:today',
+            'status' => 'nullable|in:AVAILABLE,QUARANTINE,EXPIRED_RETUR',
         ];
     }
 }

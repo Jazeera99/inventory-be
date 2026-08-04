@@ -14,6 +14,7 @@ class StockLedgerController extends Controller
 {
     public function index(StockLedgerIndexRequest $request)
     {
+        $this->authorize('Laporan Stok');
         // $query = StockLedger::with(['rack', 'user'])
         //     ->where('product_sku', $request->sku);
 
@@ -153,6 +154,7 @@ class StockLedgerController extends Controller
 
     public function getExpiredOptions(Request $request)
     {
+        $this->authorize('Laporan Stok');
         $request->validate(['sku' => 'required|string']);
 
         // Ambil tanggal expired unik dari tabel product_locations
@@ -168,6 +170,8 @@ class StockLedgerController extends Controller
 
     public function summary(Request $request)
     {
+        $this->authorize('Laporan Stok');
+
         $request->validate([
             'start_date' => 'nullable',
             'end_date' => 'nullable|after_or_equal:start_date',
@@ -248,8 +252,10 @@ class StockLedgerController extends Controller
                         $totalKeluar += abs($ledger->qty);
                     } elseif ($ledgerType === 'ADJUSTMENT') {
                         $totalAdj += $actualQty;
-                    } elseif ($ledgerType === 'MOVE' && $ledger->qty > 0) {
-                        $totalMoveDisplay += $ledger->qty;
+                    } elseif ($ledgerType === 'MOVE') {
+                        if ($ledger->qty > 0) {
+                            $totalMoveDisplay += $ledger->qty;
+                        }
                     }
                 }
             }

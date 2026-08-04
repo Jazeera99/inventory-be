@@ -20,10 +20,10 @@ class GateProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::policy(Category::class, CategoryPolicy::class);
-        Gate::policy(Product::class, ProductPolicy::class);
-        Gate::policy(ProductLocation::class, ProductLocationPolicy::class);
-        Gate::policy(StockTransaction::class, StockTransactionPolicy::class);
+        // Gate::policy(Category::class, CategoryPolicy::class);
+        // Gate::policy(Product::class, ProductPolicy::class);
+        // Gate::policy(ProductLocation::class, ProductLocationPolicy::class);
+        // Gate::policy(StockTransaction::class, StockTransactionPolicy::class);
 
         Gate::before(function ($user, $ability) {
             $permissions = $user->role->permissions ?? [];
@@ -43,10 +43,10 @@ class GateProvider extends ServiceProvider
             // }
         });
 
-        Gate::define('Manajemen Rak', function ($user) {
-            $permissions = $user->role->permissions ?? [];
+        // Gate::define('Manajemen Rak', function ($user) {
+        //     $permissions = $user->role->permissions ?? [];
 
-            return is_array($permissions) && in_array('Manajemen Rak', $permissions);
-        });
+        //     return is_array($permissions) && in_array('Manajemen Rak', $permissions);
+        // });
     }
 }

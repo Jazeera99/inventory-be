@@ -20,10 +20,9 @@ use Illuminate\Support\Carbon;
  * @property string|null $note
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read Product $product
- * @property-read Rack $rack
- * @property-read User $user
- *
+ * @property-read \App\Models\Product $product
+ * @property-read \App\Models\Rack $rack
+ * @property-read \App\Models\User $user
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StockLedger newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StockLedger newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StockLedger query()
@@ -40,7 +39,6 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StockLedger whereType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StockLedger whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StockLedger whereUserId($value)
- *
  * @mixin \Eloquent
  */
 class StockLedger extends Model

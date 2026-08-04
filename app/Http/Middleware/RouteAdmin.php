@@ -29,12 +29,13 @@ class RouteAdmin
 
         $adminPermissions = [
             'Manajemen Rak',
+            'Lihat Rak',
+            'Daftar Kategori',
+            'Lihat Kategori',
             'Daftar Produk',
-            'Produk Masuk',
-            'Produk Keluar',
-            'Stock Adjusment',
-            'Daftar Stok',
-            'Kartu Stok',
+            'Lihat Produk',
+            'Transaksi',
+            'Laporan Stok',
             'Manajemen User',
             'Hak Akses',
         ];

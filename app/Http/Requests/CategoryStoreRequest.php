@@ -23,9 +23,9 @@ class CategoryStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'category_name' => ['required', 'string', 'max:100', 'unique:categories,category_name'],
-            'description' => ['nullable', 'string', 'max:255'],
-            'is_active' => ['nullable', 'boolean'],
+            'category_name' => 'required|string|max:100|unique:categories,category_name',
+            'description' => 'nullable|string|max:255',
+            'is_active' => 'sometimes|boolean',
         ];
     }
 }

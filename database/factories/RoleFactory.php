@@ -22,8 +22,7 @@ class RoleFactory extends Factory
             'permissions' => $this->faker->randomElements([
                 'Manajemen Rak',
                 'Daftar Produk',
-                'Produk Masuk',
-                'Produk Keluar',
+                'Transaksi',
                 'Laporan Stok',
                 'Manajemen User',
             ], 3),

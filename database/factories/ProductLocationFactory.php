@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class ProductLocationFactory extends Factory
 {
     /**
-     * Define the model's default state.
+     * Define the model's default state.                                                                                                                                                                                                                                                                                                                                          
      *
      * @return array<string, mixed>
      */
@@ -26,9 +26,11 @@ class ProductLocationFactory extends Factory
         return [
             'product_sku' => $product->sku,
             'rack_id' => $rack->id,
-            'qty' => $this->faker->numberBetween(5, 30),
+            'qty' => $this->faker->numberBetween(5, 15),
             'batch_code' => $product->sku.'-'.date('Ymd', strtotime($expiredAt)).'-'.$this->faker->unique()->numerify('###'),
+            'unit_cost' => $product->purchase_price ?? 10000,
             'expired_at' => $expiredAt,
+            'status' => 'AVAILABLE',
         ];
     }
 }

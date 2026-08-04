@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('rack_name');
             $table->integer('column_number');
             $table->integer('level_number');
+            $table->integer('capacity')->default(15);
             $table->boolean('is_active')->default(true);
             $table->boolean('is_maintenance')->default(false);
             $table->timestamps();

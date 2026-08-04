@@ -20,6 +20,7 @@ class RackResource extends JsonResource
             'rack_name' => $this->rack_name,
             'column_number' => $this->column_number,
             'level_number' => $this->level_number,
+            'capacity' => $this->capacity,
             'is_active' => (bool) $this->is_active,
             'is_maintenance' => (bool) $this->is_maintenance,
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),

@@ -13,25 +13,40 @@ class ProductSeeder extends Seeder
      */
     public function run(): void
     {
-        $category = Category::first() ?? Category::factory()->create(['category_name' => 'SEMBAKO']);
+        $this->call(CategorySeeder::class);
 
-        Product::create([
-            'sku' => 'SEM-BIM-GOR-POU-1LT-PCS-001',
-            'product_name' => 'BIMOLI GORENG POUCH 1LT',
-            'category_id' => $category->id,
-            'brand' => 'BIM',
-            'type' => 'GOR',
-            'packaging' => 'POU',
-            'size' => '1 LT',
-            'stock' => 0,
-            'min_stock' => 10,
-            'is_active' => true,
-        ]);
+        // Ambil kategori khusus Minyak untuk test case produk andalan utama
+        $minyakCategory = Category::query()->where('category_name', 'Minyak dan Lemak')->first();
 
-        // Tambah 10 produk random pake factory
-        Product::factory(10)->create([
-            'category_id' => $category->id,
-            'stock' => 0,
-        ]);
+        // Insert 1 Produk Andalan Utama (Manual / Fixed)
+        Product::updateOrCreate(
+            ['sku' => 'MIN-BIM-GOR-POU-2LT-001'],
+            [
+                'product_name' => 'BIMOLI MINYAK GORENG POUCH 2LT',
+                'category_id' => $minyakCategory->id,
+                'brand' => 'BIM',
+                'type' => 'GOR',
+                'packaging' => 'POU',
+                'size' => '2 LT',
+                'purchase_price' => 32000,
+                'selling_price' => 36000,
+                'holding_cost_per_day' => 100,
+                'stock' => 0,
+                'min_stock' => 20,
+                'exp_warning_days' => 30,
+                'is_active' => true,
+            ]
+        );
+
+        // Ambil semua kategori sembako yang ada di database sekarang
+        $categories = Category::all();
+
+        // Generate 30 produk grosir random yang tersebar merata di setiap kategori sembako
+        foreach ($categories as $category) {
+            $products = Product::factory(5)->create([
+                'category_id' => $category->id,
+                'stock' => 0, // Tetap set 0 agar mutasi wajib via StockTransaction (IN/OUT)
+            ]);
+        }
     }
 }

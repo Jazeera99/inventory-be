@@ -19,8 +19,12 @@ return new class extends Migration
             $table->string('type')->nullable();
             $table->string('packaging')->nullable();
             $table->string('size')->nullable();
+            $table->decimal('purchase_price', 15, 2)->default(0);
+            $table->decimal('selling_price', 15, 2)->default(0);
+            $table->decimal('holding_cost_per_day', 10, 2)->default(0);
             $table->integer('stock')->default(0);
             $table->integer('min_stock')->default(5);
+            $table->integer('exp_warning_days')->default(30);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

@@ -20,11 +20,10 @@ use Illuminate\Support\Carbon;
  * @property string|null $notes
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read Product $product
- * @property-read Rack|null $rack
- * @property-read StockTransaction|null $stockTransaction
- * @property-read Rack|null $targetRack
- *
+ * @property-read \App\Models\Product $product
+ * @property-read \App\Models\Rack|null $rack
+ * @property-read \App\Models\StockTransaction|null $stockTransaction
+ * @property-read \App\Models\Rack|null $targetRack
  * @method static \Database\Factories\StockTransactionItemFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StockTransactionItem newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StockTransactionItem newQuery()
@@ -41,7 +40,6 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StockTransactionItem whereTargetRackId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StockTransactionItem whereTransactionNo($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StockTransactionItem whereUpdatedAt($value)
- *
  * @mixin \Eloquent
  */
 class StockTransactionItem extends Model

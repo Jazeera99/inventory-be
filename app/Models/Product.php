@@ -65,9 +65,19 @@ class Product extends Model
         'type',
         'packaging',
         'size',
+        'purchase_price',
+        'selling_price',
+        'holding_cost_per_day',
+        'stock',
         'min_stock',
+        'exp_warning_days',
         'is_active',
     ];
+
+    public function getRouteKeyName(): string
+    {
+        return 'sku';
+    }
 
     public function category()
     {
@@ -92,5 +102,14 @@ class Product extends Model
     public function stockTransactions()
     {
         return $this->hasManyThrough(StockTransaction::class, StockTransactionItem::class, 'product_sku', 'transaction_no', 'sku', 'transaction_no');
+    }
+
+    public function nearExpiredLocations()
+    {
+        $threshold = now()->addDays($this->exp_warning_days);
+        return $this->locations()
+            ->whereNotNull('expired_at')
+            ->where('expired_at', '<=', $threshold)
+            ->where('qty', '>', 0);
     }
 }

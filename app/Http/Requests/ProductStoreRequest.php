@@ -25,12 +25,17 @@ class ProductStoreRequest extends FormRequest
         return [
             'sku' => 'nullable|unique:products,sku',
             'product_name' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
-            'brand' => 'required|string|min:3',
-            'type' => 'nullable|string',
-            'packaging' => 'nullable|string',
-            'size' => 'nullable|string',
-            'min_stock' => 'required|integer|min:0',
+            'category_id' => 'required|exists:categories,id,is_active,1',
+            'brand' => 'required|string|max:50',
+            'type' => 'nullable|string|max:50',
+            'packaging' => 'required|string|max:50',
+            'size' => 'required|string|max:50',
+            'purchase_price' => 'required|numeric|min:0',
+            'selling_price' => 'required|numeric|min:0',
+            'holding_cost_per_day' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'min_stock' => 'required|integer|min:1',
+            'exp_warning_days' => 'required|integer|min:0',
         ];
     }
 }

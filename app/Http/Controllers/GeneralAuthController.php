@@ -25,6 +25,10 @@ class GeneralAuthController extends Controller
             'username' => 'Akun tidak ditemukan atau password salah.',
         ]);
 
+        Fail::when(! $user->is_active, [
+            'username' => 'Akun Anda telah dinonaktifkan. Silakan hubungi Administrator.',
+        ]);
+
         // Berikan token dengan nama sesuai Role
         $tokenName = str($user->role->value)->slug('_')->append('_token');
         $token = $user->createToken($tokenName);
