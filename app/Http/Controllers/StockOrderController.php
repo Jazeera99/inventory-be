@@ -7,6 +7,8 @@ use App\Http\Requests\StockOrderUpdateRequest;
 use App\Http\Resources\StockOrderResource;
 use App\Models\StockOrder;
 use App\Models\Product;
+use App\Models\Supplier;
+use App\Models\Customer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -47,7 +49,34 @@ class StockOrderController extends Controller
 
     public function store(StockOrderStoreRequest $request)
     {
+        if (in_array($request->type, ['INBOUND', 'OUTBOUND'])) {
+            if ($request->supplier_id) {
+                $supplier = Supplier::find($request->supplier_id);
+                if ($supplier && ! $supplier->is_active) {
+                    abort(422, 'Supplier ini sedang tidak aktif dan tidak dapat digunakan untuk PO baru.');
+                }
+            }
+            if ($request->customer_id) {
+                $customer = Customer::find($request->customer_id);
+                if ($customer && ! $customer->is_active) {
+                    abort(422, 'Customer ini sedang tidak aktif dan tidak dapat digunakan untuk SO baru.');
+                }
+            }
+        }
+
         return DB::transaction(function () use ($request) {
+            $parent = null;
+            if (in_array($request->type, ['RETURN_IN', 'RETURN_OUT'])) {
+                $parent = StockOrder::with(['items', 'returnOrders.items'])->findOrFail($request->parent_id);
+                $expectedParentType = $request->type === 'RETURN_OUT' ? 'INBOUND' : 'OUTBOUND';
+
+                if ($parent->type !== $expectedParentType) {
+                    abort(422, 'Dokumen asal retur tidak sesuai. Retur ke supplier harus berasal dari PO, retur dari customer harus berasal dari SO.');
+                }
+
+                $this->validateReturnItems($request->items, $parent, $request->type);
+            }
+
             // 1. GENERATE NOMOR ORDER AUTOMATIS (PO-YYYYMMDD-001 / SO-YYYYMMDD-001)
             $prefix = match ($request->type) {
                 'INBOUND'     => 'PO',
@@ -66,13 +95,14 @@ class StockOrderController extends Controller
             $nextSeq = $lastOrder ? ((int) substr($lastOrder->order_no, -3)) + 1 : 1;
             $orderNo = sprintf('%s-%s-%03d', $prefix, $today, $nextSeq);
 
+            $initialStatus = $request->input('status', 'PENDING');
             // 2. SIMPAN HEADER ORDER
             $order = StockOrder::create([
                 'order_no' => $orderNo,
                 'type' => $request->type,
-                'supplier_id' => in_array($request->type, ['INBOUND', 'RETURN_OUT']) ? $request->supplier_id : null,
-                'customer_id' => in_array($request->type, ['OUTBOUND', 'RETURN_IN']) ? $request->customer_id : null,
-                'status' => 'PENDING',
+                'supplier_id' => $parent?->supplier_id ?? (in_array($request->type, ['INBOUND', 'RETURN_OUT']) ? $request->supplier_id : null),
+                'customer_id' => $parent?->customer_id ?? (in_array($request->type, ['OUTBOUND', 'RETURN_IN']) ? $request->customer_id : null),
+                'status' => $initialStatus,
                 'order_date' => $request->order_date,
                 'expected_date' => $request->expected_date,
                 'parent_id' => $request->parent_id ?? null,
@@ -98,12 +128,92 @@ class StockOrderController extends Controller
         });
     }
 
+    public static function updateOrderStatusProgress(StockOrder $order): void
+    {
+        if (in_array($order->status, ['CANCELLED'])) {
+            return;
+        }
+
+        $order->load('items');
+        $totalOrdered = $order->items->sum('qty_ordered');
+        $totalFulfilled = $order->items->sum('qty_fulfilled');
+
+        if ($totalFulfilled >= $totalOrdered && $totalOrdered > 0) {
+            $order->update(['status' => 'COMPLETED']);
+        } elseif ($totalFulfilled > 0) {
+            $order->update(['status' => 'PARTIAL']);
+        } else {
+            // Jika belum ada barang yang fulfilled sama sekali
+            if ($order->status !== 'DRAFT') {
+                $order->update(['status' => 'PENDING']);
+            }
+        }
+    }
+
+    /** Daftar PO/SO dan sisa barang yang masih dapat diretur. */
+    public function returnable(Request $request)
+    {
+        $returnType = $request->validate(['type' => 'required|in:RETURN_IN,RETURN_OUT'])['type'];
+        $sourceType = $returnType === 'RETURN_OUT' ? 'INBOUND' : 'OUTBOUND';
+
+        $orders = StockOrder::with(['supplier', 'customer', 'items.product', 'returnOrders.items'])
+            ->where('type', $sourceType)
+            ->whereNotIn('status', ['DRAFT', 'CANCELLED'])
+            ->latest()
+            ->get()
+            ->map(function (StockOrder $order) use ($returnType) {
+                $items = $order->items->map(function ($item) use ($order, $returnType) {
+                    $alreadyReturned = $order->returnOrders
+                        ->where('type', $returnType)
+                        ->sum(fn ($return) => $return->items->where('product_sku', $item->product_sku)->sum('qty_ordered'));
+                    $available = max(0, $item->qty_fulfilled - $alreadyReturned);
+
+                    return [
+                        'product_sku' => $item->product_sku,
+                        'product_name' => $item->product?->product_name,
+                        'qty_available_for_return' => $available,
+                        'unit_price' => (float) $item->unit_price,
+                    ];
+                })->filter(fn ($item) => $item['qty_available_for_return'] > 0)->values();
+
+                return [
+                    'id' => $order->id,
+                    'order_no' => $order->order_no,
+                    'supplier_id' => $order->supplier_id,
+                    'customer_id' => $order->customer_id,
+                    'supplier' => $order->supplier,
+                    'customer' => $order->customer,
+                    'items' => $items,
+                ];
+            })
+            ->filter(fn ($order) => $order['items']->isNotEmpty())
+            ->values();
+
+        return response()->json(['data' => $orders]);
+    }
+
+    private function validateReturnItems(array $items, StockOrder $parent, string $returnType, ?int $ignoreReturnId = null): void
+    {
+        foreach ($items as $item) {
+            $sourceItem = $parent->items->firstWhere('product_sku', $item['product_sku']);
+            $alreadyReturned = $parent->returnOrders
+                ->where('type', $returnType)
+                ->when($ignoreReturnId, fn ($returns) => $returns->where('id', '!=', $ignoreReturnId))
+                ->sum(fn ($return) => $return->items->where('product_sku', $item['product_sku'])->sum('qty_ordered'));
+            $available = max(0, (int) ($sourceItem?->qty_fulfilled ?? 0) - $alreadyReturned);
+
+            if (! $sourceItem || $item['qty_ordered'] > $available) {
+                abort(422, "Qty retur {$item['product_sku']} melebihi qty yang dapat diretur ({$available}).");
+            }
+        }
+    }
+
     public function show($id)
     {
         $order = StockOrder::with([
             'supplier',
             'customer',
-            'parent',
+            'parent.stockTransactions.items',
             'backorders',
             'items.product',
             'stockTransactions.items'
@@ -117,7 +227,7 @@ class StockOrderController extends Controller
 
     public function update(StockOrderUpdateRequest $request, $id)
     {
-       $order = StockOrder::with('items')->findOrFail($id);
+        $order = StockOrder::with('items')->findOrFail($id);
 
         if (in_array($order->status, ['COMPLETED', 'CANCELLED'])) {
             return response()->json([
@@ -125,31 +235,66 @@ class StockOrderController extends Controller
             ], 422);
         }
 
-        $hasFulfilledItems = $order->items->pluck('qty_fulfilled')->sum() > 0;
-        if ($hasFulfilledItems && $request->has('items')) {
-            return response()->json([
-                'message' => 'Item pada order ini sudah diproses sebagian di gudang dan tidak dapat diubah lagi! Gunakan tombol "Batal Sisa" jika ada perubahan.',
-            ], 422);
+        if (in_array($order->type, ['RETURN_IN', 'RETURN_OUT']) && $request->has('items')) {
+            // Dokumen retur lama mungkin dibuat sebelum relasi dokumen asal diwajibkan.
+            // Gunakan pilihan user untuk melengkapi relasi tersebut sekali ini.
+            $parentId = $order->parent_id ?? $request->input('parent_id');
+            if (! $parentId) {
+                abort(422, 'Dokumen asal wajib dipilih untuk retur.');
+            }
+
+            $parent = StockOrder::with(['items', 'returnOrders.items'])->findOrFail($parentId);
+            $expectedParentType = $order->type === 'RETURN_OUT' ? 'INBOUND' : 'OUTBOUND';
+            if ($parent->type !== $expectedParentType) {
+                abort(422, 'Dokumen asal retur tidak sesuai.');
+            }
+            $this->validateReturnItems($request->items, $parent, $order->type, $order->id);
         }
 
-        DB::transaction(function () use ($request, $order, $hasFulfilledItems): void {
-            $order->update($request->only(['supplier_id', 'customer_id', 'status', 'order_date', 'expected_date', 'parent_id', 'cancel_reason', 'notes',
-            ]));
+        DB::transaction(function () use ($request, $order): void {
+            $fields = [
+                'supplier_id', 'customer_id', 'status', 'order_date', 'expected_date', 'parent_id', 'cancel_reason', 'notes',
+            ];
+            // Relasi retur ke PO/SO asal bersifat permanen setelah dokumen dibuat.
+            if (in_array($order->type, ['RETURN_IN', 'RETURN_OUT']) && $order->parent_id) {
+                $fields = array_values(array_diff($fields, ['parent_id', 'supplier_id', 'customer_id']));
+            }
+            $order->update($request->only($fields));
 
-            if ($request->has('items') && ! $hasFulfilledItems) {
-                $order->items()->delete();
+            if ($request->has('items')) {
+                $existingItems = $order->items->keyBy('product_sku');
+                $newSkus = collect($request->items)->pluck('product_sku')->toArray();
+
+                // Hapus item yang tidak ada lagi di payload (hanya jika qty_fulfilled == 0)
+                foreach ($order->items as $existingItem) {
+                    if (!in_array($existingItem->product_sku, $newSkus) && $existingItem->qty_fulfilled == 0) {
+                        $existingItem->delete();
+                    }
+                }
+
                 foreach ($request->items as $item) {
                     $product = Product::query()->where('sku', $item['product_sku'])->first();
-                    $defaultPrice = $order->type === 'INBOUND'
+                    $defaultPrice = in_array($order->type, ['INBOUND', 'RETURN_OUT'])
                         ? ($product?->purchase_price ?? 0)
                         : ($product?->selling_price ?? 0);
 
-                    $order->items()->create([
-                        'product_sku' => $item['product_sku'],
-                        'qty_ordered' => $item['qty_ordered'],
-                        'qty_fulfilled' => 0,
-                        'unit_price' => $item['unit_price'] ?? $defaultPrice,
-                    ]);
+                    $existing = $existingItems->get($item['product_sku']);
+                    $fulfilled = $existing ? $existing->qty_fulfilled : 0;
+                    $unitPrice = $item['unit_price'] ?? ($existing ? $existing->unit_price : $defaultPrice);
+
+                    if ($existing) {
+                        $existing->update([
+                            'qty_ordered' => max($item['qty_ordered'], $fulfilled),
+                            'unit_price' => $unitPrice,
+                        ]);
+                    } else {
+                        $order->items()->create([
+                            'product_sku' => $item['product_sku'],
+                            'qty_ordered' => $item['qty_ordered'],
+                            'qty_fulfilled' => 0,
+                            'unit_price' => $unitPrice,
+                        ]);
+                    }
                 }
             }
         });

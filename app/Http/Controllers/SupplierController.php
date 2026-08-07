@@ -62,13 +62,16 @@ class SupplierController extends Controller
     /**
      * Toggle the active status of the specified resource.
      */
-    public function toggleStatus(Supplier $supplier)
+    public function toggleActive(Supplier $supplier)
     {
-        $supplier->update(['is_active' => !$supplier->is_active]);
+        $this->authorize('Daftar Supplier');
+
+        $supplier->is_active = ! $supplier->is_active;
+        $supplier->save();
 
         return response()->json([
-            'message' => 'Status supplier berhasil diperbarui.',
-            'is_active' => $supplier->is_active,
+            'message' => $supplier->is_active ? 'Supplier berhasil diaktifkan kembali.' : 'Supplier berhasil dinonaktifkan.',
+            'is_active' => (bool) $supplier->is_active,
         ]);
     }
 

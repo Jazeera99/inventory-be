@@ -67,6 +67,11 @@ class StockOrder extends Model
         return $this->hasMany(StockOrder::class, 'parent_id');
     }
 
+    public function returnOrders(): HasMany
+    {
+        return $this->hasMany(StockOrder::class, 'parent_id');
+    }
+
     public function stockTransactions(): HasMany
     {
         return $this->hasMany(StockTransaction::class, 'stock_order_id');

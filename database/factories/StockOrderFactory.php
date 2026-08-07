@@ -24,7 +24,7 @@ class StockOrderFactory extends Factory
         $type = $this->faker->randomElement(['INBOUND', 'OUTBOUND']);
         $prefix = $type === 'INBOUND' ? 'PO' : 'SO';
         $orderDate = Carbon::parse($this->faker->dateTimeBetween('2026-05-01', '2026-07-20'));
-    
+
     // 2. Format order_no Sesuai order_date!
     $dateStr = $orderDate->format('Ymd');
     $seq = str_pad((string) $this->faker->numberBetween(1, 999), 4, '0', STR_PAD_LEFT);

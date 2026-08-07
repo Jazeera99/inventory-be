@@ -15,6 +15,20 @@ class ProductStoreRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            // Paksa stok awal jadi 0 otomatis
+            'stock' => 0,
+
+            // Jika frontend tidak mengirim holding_cost, set otomatis 0
+            'holding_cost_per_day' => $this->holding_cost_per_day ?? 0,
+
+            // Jika frontend tidak mengirim exp_warning_days, set otomatis 90 hari sesuai idemu
+            'exp_warning_days' => $this->exp_warning_days ?? 90,
+        ]);
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *

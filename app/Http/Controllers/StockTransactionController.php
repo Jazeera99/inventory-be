@@ -1082,7 +1082,7 @@ class StockTransactionController extends Controller
                                 'type' => $stockOrder->type,
                                 'supplier_id' => $stockOrder->supplier_id,
                                 'customer_id' => $stockOrder->customer_id,
-                                'status' => 'PENDING', // Tersimpan sebagai draft/pending
+                                'status' => 'DRAFT', // Tersimpan sebagai draft/pending
                                 'order_date' => Carbon::now()->format('Y-m-d'),
                                 'expected_date' => null, // Biarkan null agar diisi manual jadwal kirim barunya oleh user
                                 'parent_id' => $stockOrder->id,

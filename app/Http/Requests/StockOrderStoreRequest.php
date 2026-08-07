@@ -23,12 +23,12 @@ class StockOrderStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type' => 'required|in:INBOUND,OUTBOUND',
-            'supplier_id' => 'required_if:type,INBOUND|nullable|exists:suppliers,id',
-            'customer_id' => 'required_if:type,OUTBOUND|nullable|exists:customers,id',
+            'type' => 'required|in:INBOUND,OUTBOUND,RETURN_IN,RETURN_OUT',
+            'supplier_id' => 'required_if:type,INBOUND,RETURN_OUT|nullable|exists:suppliers,id',
+            'customer_id' => 'required_if:type,OUTBOUND,RETURN_IN|nullable|exists:customers,id',
             'order_date' => 'required|date',
             'expected_date' => 'nullable|date|after_or_equal:order_date',
-            'parent_id' => 'nullable|exists:stock_orders,id',
+            'parent_id' => 'required_if:type,RETURN_IN,RETURN_OUT|nullable|exists:stock_orders,id',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.product_sku' => 'required|exists:products,sku',
@@ -43,6 +43,7 @@ class StockOrderStoreRequest extends FormRequest
             'supplier_id.required_if' => 'Supplier wajib dipilih untuk order INBOUND (Purchase Order).',
             'customer_id.required_if' => 'Customer wajib dipilih untuk order OUTBOUND (Sales Order).',
             'items.required' => 'Minimal harus menambahkan 1 barang.',
+            'parent_id.required_if' => 'Dokumen asal wajib dipilih untuk retur.',
         ];
     }
 }

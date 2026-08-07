@@ -60,13 +60,16 @@ class CustomerController extends Controller
     /**
      * Toggle the active status of the specified resource.
      */
-    public function toggleStatus(Customer $customer)
+    public function toggleActive(Customer $customer)
     {
-        $customer->update(['is_active' => !$customer->is_active]);
+        $this->authorize('Daftar Customer');
+
+        $customer->is_active = ! $customer->is_active;
+        $customer->save();
 
         return response()->json([
-            'message' => 'Status customer berhasil diperbarui.',
-            'is_active' => $customer->is_active,
+            'message' => $customer->is_active ? 'Customer berhasil diaktifkan kembali.' : 'Customer berhasil dinonaktifkan.',
+            'is_active' => (bool) $customer->is_active,
         ]);
     }
 

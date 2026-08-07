@@ -91,6 +91,7 @@ Route::prefix('admin/product-locations')->controller(ProductLocationController::
 
 Route::prefix('admin/stock-orders')->controller(StockOrderController::class)->group(function (): void {
     Route::get('', 'index')->name('admin.stock-order.index');
+    Route::get('returnable', 'returnable')->name('admin.stock-order.returnable');
     Route::post('', 'store')->name('admin.stock-order.store');
     Route::get('{stock_order}', 'show')->name('admin.stock-order.show');
     Route::put('{stock_order}', 'update')->name('admin.stock-order.update');
