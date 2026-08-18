@@ -496,7 +496,7 @@ class StockTransactionController extends Controller
                         'balance_before' => $stokAwalGlobal,
                         'balance_after' => $stokAwalGlobal,
                         'user_id' => auth()->id(),
-                        'note' => $customNote." (Masuk ke Rak {$toRack})",
+                        'note' => $customNote,
                     ]);
                 }
 
@@ -1019,13 +1019,100 @@ class StockTransactionController extends Controller
                 }
             }
 
+            // if (! empty($request->stock_order_id) && in_array($request->type, ['IN', 'OUT'])) {
+            //     $stockOrder = StockOrder::with('items')->find($request->stock_order_id);
+
+            //     if ($stockOrder) {
+            //         $hasShortage = false;
+            //         $unfulfilledItems = [];
+
+            //         foreach ($request->items as $item) {
+            //             $orderItem = $stockOrder->items()
+            //                 ->where('product_sku', $item['product_sku'])
+            //                 ->first();
+
+            //             if ($orderItem) {
+            //                 $orderItem->increment('qty_fulfilled', $item['qty']);
+            //             }
+            //         }
+
+            //         // Refresh data items untuk cek kalkulasi status order
+            //         $stockOrder->refresh();
+
+            //         $allFulfilled = $stockOrder->items->every(fn ($i) => $i->qty_fulfilled >= $i->qty_ordered);
+            //         // $anyFulfilled = $stockOrder->items->some(fn ($i) => $i->qty_fulfilled > 0);
+
+            //         // if ($allFulfilled) {
+            //         //     $stockOrder->update(['status' => 'COMPLETED']);
+            //         // } elseif ($anyFulfilled) {
+            //         //     $stockOrder->update(['status' => 'PARTIAL']);
+            //         // }
+
+            //         if (! $allFulfilled) {
+            //             // Hitung sisa item yang belum terpenuhi
+            //             $unfulfilledItems = [];
+
+            //             foreach ($stockOrder->items as $i) {
+            //                 $remainingQty = $i->qty_ordered - $i->qty_fulfilled;
+            //                 if ($remainingQty > 0) {
+            //                     //$hasShortage = true;
+            //                     $unfulfilledItems[] = [
+            //                         'product_sku' => $i->product_sku,
+            //                         'qty_ordered' => $remainingQty,
+            //                         'unit_price' => $i->unit_price,
+            //                     ];
+            //                 }
+            //             }
+
+            //             // Jika ada barang yang kurang, buat Order Draft Baru otomatis!
+            //             if (count($unfulfilledItems) > 0) {
+            //                 $prefix = $stockOrder->type === 'INBOUND' ? 'PO' : 'SO';
+            //                 $today = Carbon::today()->format('Ymd');
+
+            //                 $lastOrder = StockOrder::query()->where('order_no', 'like', "{$prefix}-{$today}-%")
+            //                     ->orderBy('order_no', 'desc')
+            //                     ->first();
+
+            //                 $nextSeq = $lastOrder ? ((int) substr($lastOrder->order_no, -3)) + 1 : 1;
+            //                 $newOrderNo = sprintf('%s-%s-%03d', $prefix, $today, $nextSeq);
+
+            //                 // 1. Buat Header Draft PO/SO Baru untuk Sisa Pengiriman
+            //                 $draftOrder = StockOrder::create([
+            //                     'order_no' => $newOrderNo,
+            //                     'type' => $stockOrder->type,
+            //                     'supplier_id' => $stockOrder->supplier_id,
+            //                     'customer_id' => $stockOrder->customer_id,
+            //                     'status' => 'DRAFT', // Tersimpan sebagai draft/pending
+            //                     'order_date' => Carbon::now()->format('Y-m-d'),
+            //                     'expected_date' => null, // Biarkan null agar diisi manual jadwal kirim barunya oleh user
+            //                     'parent_id' => $stockOrder->id,
+            //                     'notes' => "Lanjutan (Backorder) dari Order {$stockOrder->order_no}",
+            //                 ]);
+
+            //                 // 2. Buat Items Sisa
+            //                 foreach ($unfulfilledItems as $draftItem) {
+            //                     $draftOrder->items()->create([
+            //                         'product_sku' => $draftItem['product_sku'],
+            //                         'qty_ordered' => $draftItem['qty_ordered'],
+            //                         'qty_fulfilled' => 0,
+            //                         'unit_price' => $draftItem['unit_price'],
+            //                     ]);
+            //                 }
+
+            //                 // 3. Set Status Order Lama Menjadi COMPLETED (karena sisanya sudah dilimpahkan ke Draft PO Baru)
+            //                 $stockOrder->update(['status' => 'COMPLETED']);
+            //             }
+            //         } else {
+            //             // Jika semua barang pas/lengkap
+            //             $stockOrder->update(['status' => 'COMPLETED']);
+            //         }
+            //     }
+            // }
             if (! empty($request->stock_order_id) && in_array($request->type, ['IN', 'OUT'])) {
                 $stockOrder = StockOrder::with('items')->find($request->stock_order_id);
 
                 if ($stockOrder) {
-                    $hasShortage = false;
-                    $unfulfilledItems = [];
-
+                    // 1. Update qty_fulfilled per item yang ditransaksikan
                     foreach ($request->items as $item) {
                         $orderItem = $stockOrder->items()
                             ->where('product_sku', $item['product_sku'])
@@ -1036,75 +1123,23 @@ class StockTransactionController extends Controller
                         }
                     }
 
-                    // Refresh data items untuk cek kalkulasi status order
+                    // 2. Refresh data items untuk kalkulasi status presisi
                     $stockOrder->refresh();
 
-                    $allFulfilled = $stockOrder->items->every(fn ($i) => $i->qty_fulfilled >= $i->qty_ordered);
-                    // $anyFulfilled = $stockOrder->items->some(fn ($i) => $i->qty_fulfilled > 0);
+                    $totalOrdered = $stockOrder->items->sum('qty_ordered');
+                    $totalFulfilled = $stockOrder->items->sum('qty_fulfilled');
 
-                    // if ($allFulfilled) {
-                    //     $stockOrder->update(['status' => 'COMPLETED']);
-                    // } elseif ($anyFulfilled) {
-                    //     $stockOrder->update(['status' => 'PARTIAL']);
-                    // }
+                    // 3. Pengecekan per SKU (apakah semua SKU sudah fulfilled 100%)
+                    $isAllItemsFulfilled = $stockOrder->items->every(function ($item) {
+                        return $item->qty_fulfilled >= $item->qty_ordered;
+                    });
 
-                    if (! $allFulfilled) {
-                        // Hitung sisa item yang belum terpenuhi
-                        $unfulfilledItems = [];
-
-                        foreach ($stockOrder->items as $i) {
-                            $remainingQty = $i->qty_ordered - $i->qty_fulfilled;
-                            if ($remainingQty > 0) {
-                                //$hasShortage = true;
-                                $unfulfilledItems[] = [
-                                    'product_sku' => $i->product_sku,
-                                    'qty_ordered' => $remainingQty,
-                                    'unit_price' => $i->unit_price,
-                                ];
-                            }
-                        }
-
-                        // Jika ada barang yang kurang, buat Order Draft Baru otomatis!
-                        if (count($unfulfilledItems) > 0) {
-                            $prefix = $stockOrder->type === 'INBOUND' ? 'PO' : 'SO';
-                            $today = Carbon::today()->format('Ymd');
-
-                            $lastOrder = StockOrder::query()->where('order_no', 'like', "{$prefix}-{$today}-%")
-                                ->orderBy('order_no', 'desc')
-                                ->first();
-
-                            $nextSeq = $lastOrder ? ((int) substr($lastOrder->order_no, -3)) + 1 : 1;
-                            $newOrderNo = sprintf('%s-%s-%03d', $prefix, $today, $nextSeq);
-
-                            // 1. Buat Header Draft PO/SO Baru untuk Sisa Pengiriman
-                            $draftOrder = StockOrder::create([
-                                'order_no' => $newOrderNo,
-                                'type' => $stockOrder->type,
-                                'supplier_id' => $stockOrder->supplier_id,
-                                'customer_id' => $stockOrder->customer_id,
-                                'status' => 'DRAFT', // Tersimpan sebagai draft/pending
-                                'order_date' => Carbon::now()->format('Y-m-d'),
-                                'expected_date' => null, // Biarkan null agar diisi manual jadwal kirim barunya oleh user
-                                'parent_id' => $stockOrder->id,
-                                'notes' => "Lanjutan (Backorder) dari Order {$stockOrder->order_no}",
-                            ]);
-
-                            // 2. Buat Items Sisa
-                            foreach ($unfulfilledItems as $draftItem) {
-                                $draftOrder->items()->create([
-                                    'product_sku' => $draftItem['product_sku'],
-                                    'qty_ordered' => $draftItem['qty_ordered'],
-                                    'qty_fulfilled' => 0,
-                                    'unit_price' => $draftItem['unit_price'],
-                                ]);
-                            }
-
-                            // 3. Set Status Order Lama Menjadi COMPLETED (karena sisanya sudah dilimpahkan ke Draft PO Baru)
-                            $stockOrder->update(['status' => 'COMPLETED']);
-                        }
-                    } else {
-                        // Jika semua barang pas/lengkap
+                    if ($isAllItemsFulfilled) {
+                        // Jika SEMUA SKU & QTY sudah terpenuhi 100%
                         $stockOrder->update(['status' => 'COMPLETED']);
+                    } elseif ($totalFulfilled > 0) {
+                        // Jika baru SEBAGIAN SKU / QTY yang terpenuhi (Pengiriman Bertahap)
+                        $stockOrder->update(['status' => 'PARTIAL']);
                     }
                 }
             }

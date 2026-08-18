@@ -26,6 +26,7 @@ class StockOrderStoreRequest extends FormRequest
             'type' => 'required|in:INBOUND,OUTBOUND,RETURN_IN,RETURN_OUT',
             'supplier_id' => 'required_if:type,INBOUND,RETURN_OUT|nullable|exists:suppliers,id',
             'customer_id' => 'required_if:type,OUTBOUND,RETURN_IN|nullable|exists:customers,id',
+            'status' => 'nullable|in:DRAFT',
             'order_date' => 'required|date',
             'expected_date' => 'nullable|date|after_or_equal:order_date',
             'parent_id' => 'required_if:type,RETURN_IN,RETURN_OUT|nullable|exists:stock_orders,id',

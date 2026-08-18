@@ -93,9 +93,11 @@ Route::prefix('admin/stock-orders')->controller(StockOrderController::class)->gr
     Route::get('', 'index')->name('admin.stock-order.index');
     Route::get('returnable', 'returnable')->name('admin.stock-order.returnable');
     Route::post('', 'store')->name('admin.stock-order.store');
+    Route::get('{id}/pdf', 'printPdf')->name('admin.stock-order.pdf');
     Route::get('{stock_order}', 'show')->name('admin.stock-order.show');
     Route::put('{stock_order}', 'update')->name('admin.stock-order.update');
     Route::post('{id}/cancel', 'cancel')->name('admin.stock-order.cancel');
+    Route::post('{id}/close-remaining', 'closeRemaining')->name('admin.stock-order.close-remaining');
 });
 
 // Rute untuk Stock Transactions (Riwayat Masuk/Keluar)

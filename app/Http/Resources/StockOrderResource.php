@@ -17,14 +17,15 @@ class StockOrderResource extends JsonResource
     {
         $parentTransactions = $this->parent?->stockTransactions ?? collect();
         $parentTrxItems = $parentTransactions->pluck('items')->flatten();
+        $canViewPrice = $request->user()->can('Lihat Harga') || $request->user()->hasRole('Superadmin');
 
         return [
             'id' => $this->id,
             'order_no' => $this->order_no,
             'type' => $this->type,
             'status' => $this->status,
-            'order_date' => $this->order_date?->format('Y-m-d'),
-            'expected_date' => $this->expected_date?->format('Y-m-d'),
+            'order_date' => $this->order_date ? Carbon::parse($this->order_date)->format('Y-m-d') : null,
+            'expected_date' => $this->expected_date ? Carbon::parse($this->expected_date)->format('Y-m-d') : null,
             'parent_id' => $this->parent_id,
             'parent_order_no' => $this->parent?->order_no ?? null,
             'cancel_reason' => $this->cancel_reason,
@@ -34,7 +35,7 @@ class StockOrderResource extends JsonResource
             'customer_id' => $this->customer_id,
             'customer' => $this->customer ?? null,
             //'items' => StockOrderItemResource::collection($this->whenLoaded('items')),
-            'items' => $this->items->map(function ($item) use ($parentTrxItems) {
+            'items' => $this->items->map(function ($item) use ($parentTrxItems, $canViewPrice) {
                 $originalExp = null;
                 if ($this->type === 'RETURN_IN') {
                     $matchedTrxItem = $parentTrxItems->firstWhere('product_sku', $item->product_sku);
@@ -48,8 +49,8 @@ class StockOrderResource extends JsonResource
                     'qty_ordered' => $item->qty_ordered,
                     'qty_fulfilled' => $item->qty_fulfilled,
                     'qty_remaining' => max(0, $item->qty_ordered - $item->qty_fulfilled),
-                    'unit_price' => (float) $item->unit_price,
-                    'subtotal' => (float) ($item->qty_ordered * $item->unit_price),
+                    'unit_price' => $canViewPrice ? (float) $item->unit_price : null,
+                    'subtotal' => $canViewPrice ? (float) ($item->qty_ordered * $item->unit_price) : null,
                     'suggested_expired_at' => $originalExp ? Carbon::parse($originalExp)->format('Y-m-d') : null,
                 ];
             }),

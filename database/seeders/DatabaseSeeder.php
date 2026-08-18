@@ -20,7 +20,6 @@ class DatabaseSeeder extends Seeder
             RackSeeder::class,
             CategorySeeder::class,
             ProductSeeder::class,
-            ProductLocationSeeder::class,
             StockOrderSeeder::class,
             StockTransactionSeeder::class,
         ]);

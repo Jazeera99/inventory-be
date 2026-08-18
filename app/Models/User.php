@@ -81,4 +81,25 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Role::class, 'role_id');
     }
+
+    public function hasRole(string $roleName): bool
+    {
+        return $this->role && $this->role->role_name === $roleName;
+    }
+
+    public function can($permission, $arguments = []): bool
+    {
+        if (!$this->role) {
+            return false;
+        }
+
+        $permissions = $this->role->permissions ?? [];
+
+        // Jika Superadmin / Wildcard
+        if (in_array('*', $permissions)) {
+            return true;
+        }
+
+        return in_array($permission, $permissions);
+    }
 }

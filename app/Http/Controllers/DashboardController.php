@@ -44,7 +44,10 @@ class DashboardController extends Controller
                 ];
             })->values()->all();
         // 5. Total Transaksi Mutasi Khusus Hari Ini saja
-        $transaksiHariIni = StockLedger::query()->whereDate('created_at', Carbon::today())->count();
+        $transaksiHariIni = StockLedger::query()
+            ->whereDate('created_at', Carbon::today())
+            ->selectRaw('COUNT(DISTINCT CONCAT(created_at, "-", type)) as total')
+            ->value('total') ?? 0;
 
         // 6. 5 Transaksi Terbaru (Mutasi)
         $transaksiTerbaru = StockLedger::with(['product', 'user', 'rack'])

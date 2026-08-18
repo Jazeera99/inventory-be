@@ -9,6 +9,7 @@ use App\Models\StockOrder;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Customer;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,17 +18,37 @@ class StockOrderController extends Controller
 {
     public function index(Request $request)
     {
+        $user = $request->user();
+        $isStaff = !$user->hasRole('Superadmin') && !in_array('*', $user->role->permissions ?? []);
+
         $type = $request->input('type');
         $status = $request->input('status');
+        $search = $request->input('search');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $hasStartDate = $request->filled('start_date');
         $hasEndDate = $request->filled('end_date');
 
+        $hasExpStartDate = $request->filled('exp_start_date');
+        $hasExpEndDate = $request->filled('exp_end_date');
+        $expStartDate = $request->input('exp_start_date');
+        $expEndDate = $request->input('exp_end_date');
+
         $orders = StockOrder::query()
-            ->with(['supplier', 'customer', 'items.product', 'parent'])
+            ->with(['supplier', 'customer', 'items.product', 'parent.stockTransactions.items'])
+            ->when($isStaff, function ($q) {
+                $q->where('status', '!=', 'DRAFT');
+            })
             ->when(! empty($type), fn ($q) => $q->where('type', $type))
             ->when(! empty($status), fn ($q) => $q->where('status', $status))
+
+            ->when(! empty($search), function ($q) use ($search) {
+                $q->where(function ($query) use ($search) {
+                    $query->where('order_no', 'like', "%{$search}%")
+                        ->orWhere('id', $search);
+                });
+            })
+
             ->when($hasStartDate && $hasEndDate, function ($query) use ($startDate, $endDate): void {
                 $start = Carbon::parse($startDate)->startOfDay()->toDateTimeString();
                 $end = Carbon::parse($endDate)->endOfDay()->toDateTimeString();
@@ -41,14 +62,34 @@ class StockOrderController extends Controller
                 $end = Carbon::parse($endDate)->endOfDay()->toDateTimeString();
                 $query->where('order_date', '<=', $end);
             })
-                ->latest()
-                ->paginate($request->per_page ?? 10);
+            ->when($hasExpStartDate && $hasExpEndDate, function ($query) use ($expStartDate, $expEndDate): void {
+                $start = Carbon::parse($expStartDate)->startOfDay()->toDateTimeString();
+                $end = Carbon::parse($expEndDate)->endOfDay()->toDateTimeString();
+                $query->whereBetween('expected_date', [$start, $end]);
+            })
+            ->when($hasExpStartDate && ! $hasExpEndDate, function ($query) use ($expStartDate): void {
+                $start = Carbon::parse($expStartDate)->startOfDay()->toDateTimeString();
+                $query->where('expected_date', '>=', $start);
+            })
+            ->when($hasExpEndDate && ! $hasExpStartDate, function ($query) use ($expEndDate): void {
+                $end = Carbon::parse($expEndDate)->endOfDay()->toDateTimeString();
+                $query->where('expected_date', '<=', $end);
+            })
+            ->orderByRaw("CASE WHEN status IN ('DRAFT', 'PENDING') THEN 1 WHEN status = 'PARTIAL' THEN 2 ELSE 3 END")
+            ->orderBy('expected_date', 'asc')
+            ->orderBy('id', 'desc')
+            ->latest()
+            ->paginate($request->per_page ?? 10);
 
         return StockOrderResource::collection($orders);
     }
 
     public function store(StockOrderStoreRequest $request)
     {
+        if (! $request->user()->can('Kelola Order') && ! $request->user()->hasRole('Superadmin')) {
+            return response()->json(['message' => 'Anda tidak memiliki akses untuk membuat dokumen order.'], 403);
+        }
+
         if (in_array($request->type, ['INBOUND', 'OUTBOUND'])) {
             if ($request->supplier_id) {
                 $supplier = Supplier::find($request->supplier_id);
@@ -95,7 +136,9 @@ class StockOrderController extends Controller
             $nextSeq = $lastOrder ? ((int) substr($lastOrder->order_no, -3)) + 1 : 1;
             $orderNo = sprintf('%s-%s-%03d', $prefix, $today, $nextSeq);
 
-            $initialStatus = $request->input('status', 'PENDING');
+            $initialStatus = $request->input('status', 'DRAFT');
+             $orderDate = $request->order_date ? Carbon::parse($request->order_date)->format('Y-m-d') : Carbon::today()->format('Y-m-d');
+        $expectedDate = $request->expected_date ? Carbon::parse($request->expected_date)->format('Y-m-d') : null;
             // 2. SIMPAN HEADER ORDER
             $order = StockOrder::create([
                 'order_no' => $orderNo,
@@ -103,8 +146,8 @@ class StockOrderController extends Controller
                 'supplier_id' => $parent?->supplier_id ?? (in_array($request->type, ['INBOUND', 'RETURN_OUT']) ? $request->supplier_id : null),
                 'customer_id' => $parent?->customer_id ?? (in_array($request->type, ['OUTBOUND', 'RETURN_IN']) ? $request->customer_id : null),
                 'status' => $initialStatus,
-                'order_date' => $request->order_date,
-                'expected_date' => $request->expected_date,
+                'order_date' => $orderDate,
+                'expected_date' => $expectedDate,
                 'parent_id' => $request->parent_id ?? null,
                 'notes' => $request->notes ?? null,
             ]);
@@ -130,7 +173,7 @@ class StockOrderController extends Controller
 
     public static function updateOrderStatusProgress(StockOrder $order): void
     {
-        if (in_array($order->status, ['CANCELLED'])) {
+        if (in_array($order->status, ['CANCELLED', 'COMPLETED'])) {
             return;
         }
 
@@ -216,23 +259,40 @@ class StockOrderController extends Controller
             'parent.stockTransactions.items',
             'backorders',
             'items.product',
-            'stockTransactions.items'
-            // 'transactions.items.product',
+            'stockTransactions.items',
+            'stocktransactions.items.product'
             // 'transactions.items.rack',
             // 'transactions.user'
         ])->findOrFail($id);
+
+        return response()->json([
+            'data' => $order
+        ]);
 
         return new StockOrderResource($order);
     }
 
     public function update(StockOrderUpdateRequest $request, $id)
     {
+        if (! $request->user()->can('Kelola Order') && ! $request->user()->hasRole('Superadmin')) {
+            return response()->json(['message' => 'Anda tidak memiliki akses untuk mengubah dokumen order.'], 403);
+        }
+
         $order = StockOrder::with('items')->findOrFail($id);
 
-        if (in_array($order->status, ['COMPLETED', 'CANCELLED'])) {
-            return response()->json([
-                'message' => 'Order yang sudah Selesai atau Dibatalkan tidak dapat diubah.',
-            ], 422);
+        // if (in_array($order->status, ['COMPLETED', 'CANCELLED'])) {
+        //     return response()->json([
+        //         'message' => 'Order yang sudah Selesai atau Dibatalkan tidak dapat diubah.',
+        //     ], 422);
+        // }
+
+        if ($order->status !== 'DRAFT'&& ! $request->user()->hasRole('Superadmin')) {
+            // Jika dokumen bukan DRAFT, batasi edit! Hanya izinkan ubah status ke CANCELLED
+            if (! ($request->has('status') && $request->status === 'CANCELLED')) {
+                return response()->json([
+                    'message' => 'Dokumen yang sudah diproses (' . $order->status . ') tidak dapat diubah lagi. Hanya dokumen DRAFT yang dapat diedit.',
+                ], 422);
+            }
         }
 
         if (in_array($order->type, ['RETURN_IN', 'RETURN_OUT']) && $request->has('items')) {
@@ -323,6 +383,10 @@ class StockOrderController extends Controller
 
     public function cancel(Request $request, $id)
     {
+        if (! $request->user()->can('Kelola Order') && ! $request->user()->hasRole('Superadmin')) {
+            return response()->json(['message' => 'Anda tidak memiliki akses untuk membatalkan order.'], 403);
+        }
+
         $request->validate([
             'cancel_reason' => 'required|string|max:500',
         ]);
@@ -333,5 +397,19 @@ class StockOrderController extends Controller
         return response()->json([
             'message' => "Order {$order->order_no} berhasil dibatalkan.",
         ]);
+    }
+
+    public function printPdf($id)
+    {
+        $order = StockOrder::with([
+            'supplier', 'customer', 'items.product'
+        ])->findOrFail($id);
+
+        $user = auth()->user();
+        $isSuperadmin = $user?->hasRole('Superadmin') || $user?->can('Lihat Harga');
+        $pdf = Pdf::loadView('pdf.stock-order', compact('order', 'isSuperadmin'))
+                ->setPaper('a4', 'portrait');
+
+        return $pdf->download("Stock-Order-{$order->order_no}.pdf");
     }
 }
